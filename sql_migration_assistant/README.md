@@ -29,7 +29,8 @@ customise the application to their needs and entirely own the IP.
 
 ## Installation Videos
 
-https://github.com/user-attachments/assets/b43372fb-95ea-49cd-9a2c-aec8e0d6700f
+
+https://github.com/user-attachments/assets/c55997e5-fbd4-4e03-b933-2e9dd27dbb27
 
 https://github.com/user-attachments/assets/fa622f96-a78c-40b8-9eb9-f6671c4d7b47
 
