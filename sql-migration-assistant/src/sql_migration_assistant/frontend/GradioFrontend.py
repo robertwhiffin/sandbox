@@ -13,7 +13,7 @@ from sql_migration_assistant.frontend.Tabs.InteractiveOutputTab import (
 from sql_migration_assistant.frontend.Tabs.SimilarCodeTab import SimilarCodeTab
 from sql_migration_assistant.frontend.Tabs.TranslationTab import TranslationTab
 from sql_migration_assistant.frontend.callbacks import (
-    read_code_file,
+     read_code_file,
     produce_preview,
     exectute_workflow,
     save_intent_wrapper,
@@ -22,7 +22,7 @@ from sql_migration_assistant.frontend.callbacks import (
 
 class GradioFrontend:
     intro = """<img align="right" src="https://asset.brandfetch.io/idSUrLOWbH/idm22kWNaH.png" alt="logo" width="120">
-
+    
 # Databricks Legion Migration Accelerator
 """
 
@@ -66,37 +66,45 @@ class GradioFrontend:
                 ],
                 outputs=self.interactive_output_tab.preview,
             )
-            self.add_logic_loading_batch_mode()
-            self.add_logic_loading_interactive_mode()
+            self.add_logic_loading()
             self.change_tabs_based_on_operation_mode()
 
-    def add_logic_loading_batch_mode(self):
-        for output in [
+    def add_logic_loading(self):
+        code_outputs = [
+            self.interactive_input_code_tab.loaded_code,
             self.batch_input_code_tab.selected_file,
             self.translation_tab.translation_input_code,
             self.code_explanation_tab.intent_input_code,
-            self.similar_code_tab.similar_code_input,
-        ]:
-            self.batch_input_code_tab.select_code_file.select(
-                fn=read_code_file,
-                inputs=[
-                    self.batch_input_code_tab.volume_path,
-                    self.batch_input_code_tab.select_code_file,
-                ],
-                outputs=output,
-            )
+            self.similar_code_tab.similar_code_input
+        ]
+        def update_multiple(num: int):
+            def inner(**kwargs):
+                result = [gr.update(**kwargs)]*num
+                return result
+            return inner
 
-    def add_logic_loading_interactive_mode(self):
-        for output in [
-            self.translation_tab.translation_input_code,
-            self.code_explanation_tab.intent_input_code,
-            self.similar_code_tab.similar_code_input,
-        ]:
-            self.interactive_input_code_tab.interactive_code_button.click(
-                fn=lambda x: gr.update(value=x),
-                inputs=self.interactive_input_code_tab.interactive_code,
-                outputs=output,
-            )
+        def load_file_in_views(volume_path, code_file):
+            code = read_code_file(volume_path, code_file)
+            return update_multiple(len(code_outputs))(value=code)
+
+        self.batch_input_code_tab.select_code_file.select(
+            fn=load_file_in_views,
+            inputs=[
+                self.batch_input_code_tab.volume_path,
+                self.batch_input_code_tab.select_code_file,
+                self.interactive_input_code_tab.loaded_code
+            ],
+            outputs=code_outputs
+        )
+
+        def load_code(x):
+            result = update_multiple(len(code_outputs))(value=x)
+            return result
+        self.interactive_input_code_tab.interactive_code_button.click(
+            fn=load_code,
+            inputs=self.interactive_input_code_tab.interactive_code,
+            outputs=code_outputs,
+        )
 
     def change_tabs_based_on_operation_mode(self):
         for tab in [self.batch_input_code_tab, self.batch_output_tab]:

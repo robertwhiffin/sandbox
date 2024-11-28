@@ -28,11 +28,19 @@ from sql_migration_assistant.config import (
     PROMPT_HISTORY_TABLE_NAME,
 )
 
-openai_client = OpenAI(
-    api_key=DATABRICKS_TOKEN, base_url=f"{DATABRICKS_HOST}/serving-endpoints"
-)
+
 
 w = WorkspaceClient(product="sql_migration_assistant", product_version="0.0.1")
+DATABRICKS_TOKEN = DATABRICKS_TOKEN if DATABRICKS_TOKEN else w.config.token
+print(DATABRICKS_TOKEN)
+try:
+
+    openai_client = OpenAI(
+        api_key=DATABRICKS_TOKEN, base_url=f"{DATABRICKS_HOST}/serving-endpoints"
+    )
+except Exception as e:
+    print(e)
+    openai_client = None
 see = StatementExecutionExt(w, warehouse_id=SQL_WAREHOUSE_ID)
 translation_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)
 intent_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)

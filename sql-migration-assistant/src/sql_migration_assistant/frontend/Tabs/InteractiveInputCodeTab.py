@@ -16,5 +16,8 @@ class InteractiveInputCodeTab:
                 label="Paste your code in here", language="sql-msSQL"
             )
             self.interactive_code_button.click(fn=lambda: gr.Info("Code ingested!"))
+            self.loaded_code = gr.Code(
+                label="Paste your code in here", language="sql-msSQL"
+            )
 
             self.tab = tab
