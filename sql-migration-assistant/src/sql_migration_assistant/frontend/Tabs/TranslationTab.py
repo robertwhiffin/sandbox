@@ -107,7 +107,7 @@ class TranslationTab:
                 )
 
             with gr.Accordion(label="Translation Pane", open=True):
-                gr.Markdown(""" ### Source code for translation to Spark-SQL.""")
+                gr.Markdown(""" ## AI Code Translation.""")
                 # a button labelled translate
                 self.translate_button = gr.Button("Translate")
                 with gr.Row():
@@ -116,7 +116,7 @@ class TranslationTab:
 
                         # input box for SQL code with nice formatting
                         self.translation_input_code = gr.Code(
-                            label="Input SQL",
+                            label="Input Code",
                             language="sql-msSQL",
                         )
 
@@ -125,7 +125,7 @@ class TranslationTab:
                         gr.Markdown(""" ## Translated Code""")
                         # output box of the T-SQL translated to Spark SQL
                         self.translated = gr.Code(
-                            label="Your code translated to Spark SQL",
+                            label="Translation output",
                             language="sql-sparkSQL",
                         )
 

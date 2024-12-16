@@ -111,25 +111,24 @@ class CodeExplanationTab:
 
             with gr.Accordion(label="Intent Pane", open=True):
                 gr.Markdown(
-                    """ ## AI generated intent of what your code aims to do. 
-                            """
+                    """ ## AI Generated Code Intent."""
                 )
                 self.explain_button = gr.Button("Explain")
                 with gr.Row():
                     with gr.Column():
                         gr.Markdown(""" ## Input Code.""")
 
-                        # input box for SQL code with nice formatting
+                        # input code box
                         self.intent_input_code = gr.Code(
-                            label="Input SQL",
-                            language="sql-msSQL",
+                            label="Input Code",
+                            language="sql-msSQL", # default, this can be updated
                         )
                         # a button labelled translate
 
                     with gr.Column():
                         # divider subheader
                         gr.Markdown(""" ## Code intent""")
-                        # output box of the T-SQL translated to Spark SQL
+                        # output box of the translated code
                         self.explained = gr.Textbox(
                             label="AI generated intent of your code."
                         )
