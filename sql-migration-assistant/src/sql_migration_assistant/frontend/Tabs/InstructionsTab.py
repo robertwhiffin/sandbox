@@ -46,14 +46,18 @@ class InstructionsTab:
                 )
                 self.input_language = gr.Dropdown(
                     label="Select input code language syntax",
-                    choices=["sql", "python", "r", "none"],
+                    # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
+                    # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
+                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
                     value="sql",
                     type="value",
                     interactive=True,
                 )
                 self.output_language = gr.Dropdown(
                     label="Select output code language syntax",
-                    choices=["sql", "python", "r", "none"],
+                    # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
+                    # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
+                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
                     value="sql",
                     type="value",
                     interactive=True,

@@ -117,7 +117,7 @@ class TranslationTab:
                         # input box for SQL code with nice formatting
                         self.translation_input_code = gr.Code(
                             label="Input Code",
-                            language="sql-msSQL",
+                            language="sql",
                         )
 
                     with gr.Column():

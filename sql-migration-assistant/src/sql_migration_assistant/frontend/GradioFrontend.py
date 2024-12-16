@@ -143,7 +143,7 @@ class GradioFrontend:
     def update_output_language(self):
         def inner(language):
             return [gr.update(language=language)] * len(self.code_output_objects)
-        self.instructions_tab.input_language.input(
+        self.instructions_tab.output_language.input(
             fn=inner,
             inputs=self.instructions_tab.output_language,
             outputs= self.code_output_objects
