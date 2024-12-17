@@ -116,7 +116,7 @@ class GradioFrontend:
                 self.instructions_tab.operation,
                 tab.tab,
             )
-        for tab in [self.interactive_input_code_tab, self.interactive_output_tab]:
+        for tab in [self.interactive_input_code_tab, self.interactive_output_tab, self.similar_code_tab]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x == "Interactive mode"))),
                 self.instructions_tab.operation,
