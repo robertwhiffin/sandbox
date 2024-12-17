@@ -15,26 +15,50 @@ class InstructionsTab:
         This interface is the Legion Control Panel. Here you are able to configure the AI agents for translation and explanation
         to fit your needs, incorporating your expertise and knowledge of the codebase by adjusting the AI agents' instructions.
         
-        Legion can work in a batch or interactive fashion.
+        ## Operational Parameters:
         
-        *Interactive operation*
+        ### *Interactive mode*
         Fine tune the AI agents on a single file and output the result as a Databricks notebook. 
         Use this UI to adjust the system prompts and instructions for the AI agents to generate the best translation and intent.
         
-        *Batch operation*
+        ### *Batch mode*
         Process a Volume of files to generate Databricks notebooks. Use this UI to fine tune your agent prompts against selected
-         files before executing a Workflow to transform all files in the Volume, outputting Databricks notebooks with the AI
-         generated intent and translation.
+        files before executing a Workflow to transform all files in the Volume, outputting Databricks notebooks with the AI
+        generated intent and translation.
+        
+        ### *Code syntax highlighting*
+        
+        Select your input and output code languages below to apply syntax highlighting. This is purely for visual 
+        purposes and has no effect on how the tool operates.
         
         
-        Please select your mode of operation to get started.   
+        Please select your  mode of operation to get started.   
         
         """
             )
-            self.operation = gr.Radio(
-                label="Select operation mode",
-                choices=["Interactive mode", "Batch mode"],
-                value="Interactive mode",
-                type="value",
-                interactive=True,
-            )
+            with gr.Row():
+                self.operation = gr.Radio(
+                    label="Select operation mode",
+                    choices=["Interactive mode", "Batch mode"],
+                    value="Interactive mode",
+                    type="value",
+                    interactive=True,
+                )
+                self.input_language = gr.Dropdown(
+                    label="Select input code language syntax",
+                    # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
+                    # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
+                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
+                    value="sql",
+                    type="value",
+                    interactive=True,
+                )
+                self.output_language = gr.Dropdown(
+                    label="Select output code language syntax",
+                    # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
+                    # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
+                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
+                    value="sql",
+                    type="value",
+                    interactive=True,
+                )

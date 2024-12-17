@@ -1,4 +1,5 @@
 import gradio as gr
+from pyarrow import output_stream
 
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
@@ -66,37 +67,54 @@ class GradioFrontend:
                 ],
                 outputs=self.interactive_output_tab.preview,
             )
-            self.add_logic_loading_batch_mode()
-            self.add_logic_loading_interactive_mode()
-            self.change_tabs_based_on_operation_mode()
 
-    def add_logic_loading_batch_mode(self):
-        for output in [
+
+        # collect all the input and output objects into a list to make it simpler to update them
+        self.code_input_objects = [
+            self.interactive_input_code_tab.interactive_code,
             self.batch_input_code_tab.selected_file,
             self.translation_tab.translation_input_code,
             self.code_explanation_tab.intent_input_code,
             self.similar_code_tab.similar_code_input,
-        ]:
-            self.batch_input_code_tab.select_code_file.select(
-                fn=read_code_file,
-                inputs=[
-                    self.batch_input_code_tab.volume_path,
-                    self.batch_input_code_tab.select_code_file,
-                ],
-                outputs=output,
-            )
+        ]
+        self.code_output_objects = [
+            self.translation_tab.translated,
+            self.similar_code_tab.similar_code_output,
+        ]
+
+        # add the button click logic
+        with self.app:
+            self.add_logic_loading_batch_mode()
+            self.add_logic_loading_interactive_mode()
+            self.change_tabs_based_on_operation_mode()
+            self.update_input_language()
+            self.update_output_language()
+
+    def add_logic_loading_batch_mode(self):
+
+        def read_code_file_inner(volume_path, file_name):
+            code = read_code_file(volume_path, file_name)
+            return [code] * len(self.code_input_objects)
+
+        self.batch_input_code_tab.select_code_file.select(
+            fn=read_code_file_inner,
+            inputs=[
+                self.batch_input_code_tab.volume_path,
+                self.batch_input_code_tab.select_code_file,
+            ],
+            outputs=self.code_input_objects,
+        )
 
     def add_logic_loading_interactive_mode(self):
-        for output in [
-            self.translation_tab.translation_input_code,
-            self.code_explanation_tab.intent_input_code,
-            self.similar_code_tab.similar_code_input,
-        ]:
-            self.interactive_input_code_tab.interactive_code_button.click(
-                fn=lambda x: gr.update(value=x),
-                inputs=self.interactive_input_code_tab.interactive_code,
-                outputs=output,
-            )
+
+        def update_code(code):
+            return [code] * len(self.code_input_objects)
+
+        self.interactive_input_code_tab.interactive_code_button.click(
+            fn=update_code,
+            inputs=self.interactive_input_code_tab.interactive_code,
+            outputs=self.code_input_objects,
+        )
 
     def change_tabs_based_on_operation_mode(self):
         for tab in [self.batch_input_code_tab, self.batch_output_tab]:
@@ -111,3 +129,22 @@ class GradioFrontend:
                 self.instructions_tab.operation,
                 tab.tab,
             )
+
+    def update_input_language(self):
+        def inner(language):
+            return [gr.update(language=language)] * len(self.code_input_objects)
+        self.instructions_tab.input_language.input(
+            fn=inner,
+            inputs=self.instructions_tab.input_language,
+            outputs= self.code_input_objects
+        )
+
+
+    def update_output_language(self):
+        def inner(language):
+            return [gr.update(language=language)] * len(self.code_output_objects)
+        self.instructions_tab.output_language.input(
+            fn=inner,
+            inputs=self.instructions_tab.output_language,
+            outputs= self.code_output_objects
+        )
