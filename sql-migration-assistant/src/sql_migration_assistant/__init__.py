@@ -7,10 +7,10 @@ from databricks.sdk import WorkspaceClient
 from sql_migration_assistant.utils.initialsetup import SetUpMigrationAssistant
 
 
-def hello(**kwargs):
+def install_migration_assistant(**kwargs):
     w = WorkspaceClient(
         product="sql_migration_assistant",
-        product_version="0.0.1",
+        product_version="0.0.2",
         profile=kwargs.get("profile"),
     )
     p = Prompts()

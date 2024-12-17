@@ -11,8 +11,8 @@ def ip_access_list_analyzer(**args):
     analyzer.main(args)
 
 def sql_migration_assistant(**kwargs):
-    from sql_migration_assistant import hello
-    hello(**kwargs)
+    from sql_migration_assistant import install_migration_assistant
+    install_migration_assistant(**kwargs)
 
 MAPPING = {
     "ip-access-list-analyzer": ip_access_list_analyzer,
