@@ -40,13 +40,6 @@ class GradioFrontend:
             self.batch_output_tab = BatchOutputTab()
             self.interactive_output_tab = InteractiveOutputTab()
 
-            self.similar_code_tab.submit.click(
-                save_intent_wrapper,
-                inputs=[
-                    self.translation_tab.translation_input_code,
-                    self.code_explanation_tab.explained,
-                ],
-            )
             self.batch_output_tab.execute.click(
                 exectute_workflow,
                 inputs=[

@@ -8,39 +8,81 @@ class SimilarCodeTab:
     tab: gr.Tab
 
     def __init__(self):
-        with gr.Tab(label="Find Similar Code") as tab:
+        with gr.Tab(label="Similar Code") as tab:
             self.tab = tab
             self.header = gr.Markdown(
                 """
-            # ** Work in Progress **
-            ## An AI tool to find similar code.
+            ## Code with a similar intent to yours.
+            
+            This tab surfaces code that has a similar intent to input code. This can be used to understand whether 
+            you need to migrate your code or if you can adapt and use the already migrated code.
+            
+            Pressing the button below will retrieve the top 5 already processed code files with a similar intent to yours. 
             """
             )
-            with gr.Accordion(label="Similar Code Pane", open=True):
-                gr.Markdown(
-                    """ ## Similar code 
-                            
-                            This code is thought to be similar to what you are doing, based on comparing the intent of your code with the intent of this code.
-                            """
+            # a button
+            self.find_similar_code = gr.Button("Retrieve similar code")
+            # a row with an code and text box to show the similar code
+
+            # create this hidden dataframe to store the returned code in
+            with gr.Accordion(
+                    label="## Retrieved Code - expand for details"
+                    , open=False
+                    , visible=False
+            ) as self.retrieved_code:
+                self.returned_code = gr.Dataframe(
+                    visible=False
+                    ,headers=["Code", "Intent", "Similarity"]
+                    ,type = "numpy"
+                    , interactive=False
                 )
-                # a button
-                self.find_similar_code = gr.Button("Find similar code")
-                # a row with an code and text box to show the similar code
-                with gr.Row():
-                    self.similar_code_input = gr.Code(
-                        label="Input Code.", language="sql-sparkSQL"
-                    )
-                    self.similar_code_output = gr.Code(
-                        label="Similar code to yours.", language="sql-sparkSQL"
-                    )
-                    self.similar_intent = gr.Textbox(label="The similar codes intent.")
+            # show the intent of the similar code
+            self.similar_intent = gr.Textbox(
+                label="The similar codes intent."
+                , interactive=False
+                , visible=False
+            )
+            self.similar_code_selector = gr.Radio(
+                label="Select retrieved code ranked by similarity - 1 is highest."
+                ,choices=[1,2,3,4,5]
+                ,type="index"
+                ,value=1
+                , visible=False
+            )
+            with gr.Row():
+                self.similar_code_input = gr.Code(
+                    label="Input Code.", language="sql"
+                    ,interactive=False
+                , visible=False
+                )
+                self.similar_code_output = gr.Code(
+                    label="Similar code to yours.", language="sql"
+                    , interactive=False
+                , visible=False
+                )
 
-                # a button
-                self.submit = gr.Button("Save code and intent")
-
-                # assign actions to buttons when clicked.
+            # When top button is clicked, get code and set everything to visible.
             self.find_similar_code.click(
                 fn=similar_code_helper.get_similar_code,
                 inputs=self.similar_code_input,
-                outputs=[self.similar_code_output, self.similar_intent],
+                outputs=self.returned_code,
+            )
+
+            self.find_similar_code.click(
+                fn=lambda : [gr.update(visible=True)]*7,
+                outputs=[
+                         self.find_similar_code,
+                         self.similar_intent,
+                         self.retrieved_code,
+                         self.returned_code,
+                         self.similar_code_selector,
+                         self.similar_code_input,
+                         self.similar_code_output,
+                         ],
+            )
+
+            self.similar_code_selector.select(
+                fn = lambda index, dataframe: [dataframe[index][0], dataframe[index][1]]
+                ,inputs = [self.similar_code_selector, self.returned_code]
+                ,outputs = [self.similar_code_output, self.similar_intent]
             )
