@@ -34,4 +34,8 @@ class BatchInputCodeTab:
                 label="Selected Code File", language="sql"
             )
 
-            self.load_files.click(list_files, self.volume_path, self.select_code_file)
+            self.load_files.click(
+                list_files
+                , self.volume_path
+                , self.select_code_file
+            )

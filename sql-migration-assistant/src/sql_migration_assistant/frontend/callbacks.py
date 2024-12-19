@@ -54,7 +54,8 @@ similar_code_helper = SimilarCode(
 def list_files(path_to_volume):
     file_infos = w.dbutils.fs.ls(path_to_volume)
     file_names = [x.name for x in file_infos]
-    return file_names
+    file_name_radio = gr.Radio(label="Select Code File", choices=file_names)
+    return file_name_radio
 
 
 def make_status_box_visible():
