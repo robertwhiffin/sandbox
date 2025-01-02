@@ -96,6 +96,7 @@ gold_df = (
             "/",
             f.lit(workspace_location),
             f.lit("outputNotebooks"),
+            f.lit("batchTranslated"),
             f.col("loadDatetimeStr"),
             f.col("path"),
         ),
