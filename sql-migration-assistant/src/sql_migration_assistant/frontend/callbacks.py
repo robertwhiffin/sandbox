@@ -91,6 +91,7 @@ def produce_preview(explanation, translated_code, similar_code_notebook_url):
 -- MAGIC ### AI Detected Similar Code 
 -- MAGIC 
 -- MAGIC [This](SIMILAR_CODE_NOTEBOOK_URL)) is the most similar notebook to the code you provided and may provide additional context and assistance for finetuning this output.
+-- MAGIC 
 -- MAGIC ### AI Generated Intent
 -- MAGIC
 -- MAGIC INTENT_GOES_HERE
