@@ -55,13 +55,13 @@ VS_INDEX_NAME= app_configs["VS_INDEX_NAME"]
 catalog=app_configs["CATALOG"]
 schema= app_configs["SCHEMA"]
 
-# udf for getting the top 5 similar code files. Returns like [[url, similarity], ...]
-@udf(ArrayType(ArrayType(StringType(),DoubleType())))
+# udf for getting the top 5 similar code files. Returns like [[url, intent, similarity], ...]
+@udf(ArrayType(ArrayType(StringType(),StringType(), DoubleType())))
 def get_similar_code(intent):
     w = WorkspaceClient(host=host, token=key)
     results = w.vector_search_indexes.query_index(
         index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
-        columns=["notebook_url"],
+        columns=["notebook_url", "intent"],
         query_text=intent,
         num_results=5,
     )
