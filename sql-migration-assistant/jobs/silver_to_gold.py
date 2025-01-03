@@ -31,8 +31,12 @@ silver_llm_responses = (
 gold_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.gold_transformed_notebooks'
 )
+
+code_intent_table = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_configs["CODE_INTENT_TABLE_NAME"]}'
+
 prompt_id = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="promptID")
 output_volume_path = app_configs["VOLUME_NAME_OUTPUT_PATH"]
+
 
 # COMMAND ----------
 
@@ -63,7 +67,7 @@ def write_notebook_code_with_similarity(llm_responses, similar_code):
 -- MAGIC |--------------|----------------------|------------------|
 """
     table_rows = "\n".join(
-        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {round(float(item[2]), 3)} |" for item in similar_code]
+        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {str(round(float(item[2]), 3))} |" for item in similar_code]
     )
     markdown_table = table_header + table_rows
 
@@ -130,14 +134,15 @@ TRANSLATED_CODE_GOES_HERE
 gold_df = (
     spark.read.table(silver_llm_responses)
     .filter(f.col("promptID") == f.lit(prompt_id))
-    .withColumn("zipped", f.array(f.col("agentName"), f.col("agentResponse")))
-    .groupBy(f.col("content"), f.col("processedDateString"), f.col("promptID"), f.col("path"), f.col("outputNotebookPath"))
+    .withColumn("agentResponses", f.struct(f.col("agentName"), f.col("agentResponse")))
+    .groupBy(f.col("content"), f.col("processedDateString"), f.col("promptID"), f.col("path"),
+             f.col("outputNotebookPath"))
     .agg(
-        f.collect_list(f.col("zipped")).alias("zipped"),
-        # similar code notebooks will only be populate for the row belonging to the explanation agent - so can just take the first non null
+        f.collect_list(f.col("agentResponses")).alias("agentResponses"),
         f.first(f.col('similarCodeNotebooks'), ignorenulls=True).alias("similarCodeNotebooks"),
     )
-    .withColumn("notebookAsString", write_notebook_code(f.col("zipped"), f.col("similarCodeNotebooks")))
+    .withColumn("notebookAsString", write_notebook_code(f.col("agentResponses"), f.col("similarCodeNotebooks")))
+    .withColumn("agentResponses", f.map_from_entries(f.col("agentResponses")))
     .withColumn(
         "outputVolumePath",
         f.concat_ws(
@@ -151,11 +156,12 @@ gold_df = (
         "notebookAsString",
         "outputVolumePath",
         "outputNotebookPath",
+        "similarCodeNotebooks",
+        "agentResponses"
     )
 )
 
 gold_df.display()
-
 
 # COMMAND ----------
 
@@ -179,20 +185,6 @@ display(
 
 pandas_gold = gold_df.toPandas()
 
-temp_table_name = "gold_temp"
-gold_df.createOrReplaceTempView(temp_table_name)
-spark.sql(
-    f"""
-  INSERT INTO {gold_table} TABLE {temp_table_name}
-  """
-)
-display(
-    spark.sql(
-        f"""
-  select * from {gold_table}
-  """
-    )
-)
 w = WorkspaceClient(host=host, token=key)
 
 
@@ -214,7 +206,35 @@ def write_files(row):
         language=Language.SQL,
         overwrite=True,
     )
+    _ = w.workspace.get_status(notebook_path)
+    id = _.object_id
+    url = f"{w.config.host}/#notebook/{id}"
+    return url
 
 
 pandas_gold = gold_df.toPandas()
-pandas_gold.apply(write_files, axis=1)
+pandas_gold["notebook_url"] = pandas_gold.apply(write_files, axis=1)
+pandas_gold
+
+# COMMAND ----------
+
+df = spark.createDataFrame(pandas_gold)
+df.createOrReplaceTempView("code_intent_updates")
+
+spark.sql(
+    f"""
+MERGE INTO {code_intent_table} AS target
+USING (
+  SELECT hash(content) AS id
+  , content AS code
+  , agentResponses.explanation_agent AS intent
+  , notebook_url AS notebook_url
+  FROM code_intent_updates
+) AS source
+ON target.id = source.id
+WHEN MATCHED THEN
+  UPDATE SET target.code = source.code, target.intent = source.intent, target.notebook_url = source.notebook_url
+WHEN NOT MATCHED THEN
+  INSERT (id, code, intent, notebook_url) VALUES (source.id, source.code, source.intent, source.notebook_url)
+"""
+)
