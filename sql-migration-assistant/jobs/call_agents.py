@@ -50,21 +50,21 @@ key = dbutils.secrets.get(scope=secret_scope, key=secret_key)
 
 ####################
 # udf to get the most similar code notebook path
-VS_INDEX_NAME="code_intent_vs_index" # app_configs["VS_INDEX_NAME"]
+VS_INDEX_NAME= app_configs["VS_INDEX_NAME"]
 catalog=app_configs["CATALOG"]
 schema= app_configs["SCHEMA"]
 
-@udf(StringType())
+@udf(ArrayType(StringType()))
 def get_similar_code(intent):
     w = WorkspaceClient(host=host, token=key)
     results = w.vector_search_indexes.query_index(
         index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
         columns=["notebook_url"],
         query_text=intent,
-        num_results=1,
+        num_results=5,
     )
-    docs = results.result.data_array[0][0]
-    return docs
+    data_array = results.result.data_array
+    return [x[0] for x in data_array]
 
         
 
