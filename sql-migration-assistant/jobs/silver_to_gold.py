@@ -97,9 +97,10 @@ gold_df = (
     .withColumn("zipped", f.array(f.col("agentName"), f.col("agentResponse")))
     .groupBy(f.col("content"), f.col("processedDateString"), f.col("promptID"), f.col("path"), f.col("outputNotebookPath"))
     .agg(
-        f.collect_list(f.col("zipped")).alias("zipped")
+        f.collect_list(f.col("zipped")).alias("zipped"),
+        f.first(f.col('similarCodeNotebooks'), ignorenulls=True).alias("similarCodeNotebooks"),
     )
-    .withColumn("notebookAsString", write_notebook_code(f.col("zipped"), f.col("outputNotebookPath")))
+    .withColumn("notebookAsString", write_notebook_code(f.col("zipped"), f.col("similarCodeNotebooks")))
     .withColumn(
         "outputVolumePath",
         f.concat_ws(

@@ -201,7 +201,7 @@ def exectute_workflow(
         ),
         "DATABRICKS_TOKEN_SECRET_KEY": os.environ.get("DATABRICKS_TOKEN_SECRET_KEY"),
         "CODE_INTENT_TABLE_NAME": os.environ.get("CODE_INTENT_TABLE_NAME"),
-        "VS_INDEX_NAME":os.environ.get(VS_INDEX_NAME),
+        "VS_INDEX_NAME":VS_INDEX_NAME,
         "WORKSPACE_LOCATION": WORKSPACE_LOCATION,
     }
 
