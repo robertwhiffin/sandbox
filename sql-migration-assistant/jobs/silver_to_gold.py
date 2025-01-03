@@ -41,6 +41,13 @@ output_volume_path = app_configs["VOLUME_NAME_OUTPUT_PATH"]
 
 @udf(StringType())
 def write_notebook_code(llm_responses, similar_code):
+    if similar_code is not None:
+        return write_notebook_code_with_similarity(llm_responses, similar_code)
+    else:
+        return write_notebook_code_without_similarity(llm_responses)
+
+
+def write_notebook_code_with_similarity(llm_responses, similar_code):
     # parse the llm responses to get the explanation and translation
     for response in llm_responses:
         if "explanation_agent" == response[0]:
@@ -56,10 +63,9 @@ def write_notebook_code(llm_responses, similar_code):
 -- MAGIC |--------------|----------------------|------------------|
 """
     table_rows = "\n".join(
-        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {round(item[1], 3)} |" for item in similar_code]
+        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {round(float(item[2]), 3)} |" for item in similar_code]
     )
     markdown_table = table_header + table_rows
-
 
     template = """
 -- Databricks notebook source
@@ -84,7 +90,37 @@ TRANSLATED_CODE_GOES_HERE
         .replace("INTENT_GOES_HERE", explanation)
         .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
         .replace("SIMILAR_CODE_NOTEBOOKS", markdown_table)
-        )
+    )
+    return output
+
+
+def write_notebook_code_without_similarity(llm_responses):
+    # parse the llm responses to get the explanation and translation
+    for response in llm_responses:
+        if "explanation_agent" == response[0]:
+            explanation = response[1]
+        elif "translation_agent" == response[0]:
+            translated_code = response[1]
+
+    template = """
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
+-- MAGIC
+-- MAGIC ### AI Generated Intent
+-- MAGIC
+-- MAGIC INTENT_GOES_HERE
+
+-- COMMAND ----------
+
+TRANSLATED_CODE_GOES_HERE
+  """.strip()
+
+    output = (
+        template
+        .replace("INTENT_GOES_HERE", explanation)
+        .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
+    )
     return output
 
 
@@ -98,6 +134,7 @@ gold_df = (
     .groupBy(f.col("content"), f.col("processedDateString"), f.col("promptID"), f.col("path"), f.col("outputNotebookPath"))
     .agg(
         f.collect_list(f.col("zipped")).alias("zipped"),
+        # similar code notebooks will only be populate for the row belonging to the explanation agent - so can just take the first non null
         f.first(f.col('similarCodeNotebooks'), ignorenulls=True).alias("similarCodeNotebooks"),
     )
     .withColumn("notebookAsString", write_notebook_code(f.col("zipped"), f.col("similarCodeNotebooks")))

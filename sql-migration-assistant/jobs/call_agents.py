@@ -72,7 +72,11 @@ def get_similar_code(intent):
         num_results=5,
     )
     data_array = results.result.data_array
-    return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
+    # this if statement is necessary for when the index is empty (which it will be for the first run)
+    if data_array:
+        return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
+    else:
+        return None
 
 
         
