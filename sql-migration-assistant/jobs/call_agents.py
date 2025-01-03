@@ -1,14 +1,19 @@
 # Databricks notebook source
-import json
-
-import pyspark.sql.functions as f
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
-from pyspark.sql.functions import pandas_udf
+import json
+import os
 from pyspark.sql.types import (
+    ArrayType,
+    StructType,
+    StructField,
     StringType,
     MapType,
+    IntegerType,
+    TimestampType,
 )
+import pyspark.sql.functions as f
+from pyspark.sql.functions import udf, pandas_udf
 
 # COMMAND ----------
 
@@ -28,6 +33,12 @@ secret_scope = app_configs["DATABRICKS_TOKEN_SECRET_SCOPE"]
 secret_key = app_configs["DATABRICKS_TOKEN_SECRET_KEY"]
 host = app_configs["DATABRICKS_HOST"]
 
+workspace_location = app_configs["WORKSPACE_LOCATION"]
+workspace_location = "/Workspace" + workspace_location
+
+# get the processedDatetime value set in the first task
+processedDatetime = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="processedDatetime")
+
 # COMMAND ----------
 
 print(record_id)
@@ -37,7 +48,28 @@ print(record_id)
 # need this for when workspace client is created during a job
 key = dbutils.secrets.get(scope=secret_scope, key=secret_key)
 
+####################
+# udf to get the most similar code notebook path
+VS_INDEX_NAME="code_intent_vs_index" # app_configs["VS_INDEX_NAME"]
+catalog=app_configs["CATALOG"]
+schema= app_configs["SCHEMA"]
 
+@udf(StringType())
+def get_similar_code(intent):
+    w = WorkspaceClient(host=host, token=key)
+    results = w.vector_search_indexes.query_index(
+        index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
+        columns=["notebook_url"],
+        query_text=intent,
+        num_results=1,
+    )
+    docs = results.result.data_array[0][0]
+    return docs
+
+        
+
+####################
+# udf to make LLM calls
 @pandas_udf(MapType(StringType(), StringType()))
 def call_llm(input_code_series, agent_configs_series):
     def process_row(input_code, agent_configs):
@@ -68,15 +100,34 @@ def call_llm(input_code_series, agent_configs_series):
     return input_code_series.combine(agent_configs_series, process_row)
 
 
+
+
 # COMMAND ----------
 
+# DBTITLE 1,Call the AI Agents
 response = (
     spark.read.table(bronze_holding_table)
     .where(f.col("id") == f.lit(record_id))
     .withColumn("llm_responses", call_llm(f.col("content"), f.col("agentConfigs")))
     .withColumn("agentName", f.map_keys(f.col("agentConfigs")).getItem(0))
     .withColumn("agentResponse", f.map_values(f.col("llm_responses")).getItem(0))
-    .select("path", "promptID", "loadDatetime", "content", "agentName", "agentResponse")
+    .withColumn("processedDateString", f.lit(processedDatetime))
+    .withColumn(
+        "outputNotebookPath",
+        f.concat_ws(
+            "/",
+            f.lit(workspace_location),
+            f.lit("outputNotebooks"),
+            f.lit("batchTranslated"),
+            f.col("processedDateString"),
+            f.col("path"),
+            ),
+        )
+    .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
+    .withColumn(
+        "similarCodeNotebookPath", 
+        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(f.lit(None))
+    )
     .cache()
 )
 

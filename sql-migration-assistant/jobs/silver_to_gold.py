@@ -1,11 +1,10 @@
 # Databricks notebook source
 import base64
-import json
-
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.workspace import ImportFormat, Language
 from pyspark.sql import functions as f
 from pyspark.sql.types import *
+import json
 
 # COMMAND ----------
 
@@ -35,13 +34,12 @@ gold_table = (
 prompt_id = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="promptID")
 output_volume_path = app_configs["VOLUME_NAME_OUTPUT_PATH"]
 
-
 # COMMAND ----------
 
-
 # DBTITLE 1,function to write out a notebook as a string
+
 @udf(StringType())
-def write_notebook_code(llm_responses):
+def write_notebook_code(llm_responses, url):
     for response in llm_responses:
         if "explanation_agent" == response[0]:
             explanation = response[1]
@@ -53,6 +51,10 @@ def write_notebook_code(llm_responses):
 -- MAGIC %md
 -- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
 -- MAGIC
+-- MAGIC ### AI Detected Similar Code 
+-- MAGIC 
+-- MAGIC [This](SIMILAR_CODE_NOTEBOOK_URL) is the most similar notebook to the code you provided and may provide additional context and assistance for finetuning this output.
+-- MAGIC 
 -- MAGIC ### AI Generated Intent
 -- MAGIC
 -- MAGIC INTENT_GOES_HERE
@@ -60,11 +62,14 @@ def write_notebook_code(llm_responses):
 -- COMMAND ----------
 
 TRANSLATED_CODE_GOES_HERE
-  """
+  """.strip()
 
-    output = template.replace("INTENT_GOES_HERE", explanation).replace(
-        "TRANSLATED_CODE_GOES_HERE", translated_code
-    )
+    output = (
+        template
+        .replace("INTENT_GOES_HERE", explanation)
+        .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
+        .replace("SIMILAR_CODE_NOTEBOOK_URL", url)
+        )
     return output
 
 
@@ -75,36 +80,21 @@ gold_df = (
     spark.read.table(silver_llm_responses)
     .filter(f.col("promptID") == f.lit(prompt_id))
     .withColumn("zipped", f.array(f.col("agentName"), f.col("agentResponse")))
-    .groupBy(f.col("content"), f.col("loadDatetime"), f.col("promptID"), f.col("path"))
+    .groupBy(f.col("content"), f.col("processedDateString"), f.col("promptID"), f.col("path"), f.col("outputNotebookPath"))
     .agg(
-        f.collect_list(f.col("zipped")).alias("zipped"),
+        f.collect_list(f.col("zipped")).alias("zipped")
     )
-    .withColumn("notebookAsString", write_notebook_code(f.col("zipped")))
-    .withColumn("path", f.split(f.col("path"), f.lit("\."))[0])
-    .withColumn(
-        "loadDatetimeStr", f.replace(f.col("loadDatetime"), f.lit(":"), f.lit("_"))
-    )
+    .withColumn("notebookAsString", write_notebook_code(f.col("zipped"), f.col("outputNotebookPath")))
     .withColumn(
         "outputVolumePath",
         f.concat_ws(
-            "/", f.lit(output_volume_path), f.col("loadDatetimeStr"), f.col("path")
-        ),
-    )
-    .withColumn(
-        "outputNotebookPath",
-        f.concat_ws(
-            "/",
-            f.lit(workspace_location),
-            f.lit("outputNotebooks"),
-            f.lit("batchTranslated"),
-            f.col("loadDatetimeStr"),
-            f.col("path"),
+            "/", f.lit(output_volume_path), f.col("processedDateString"), f.col("path")
         ),
     )
     .select(
         "promptID",
         "content",
-        "loadDatetime",
+        "processedDateString",
         "notebookAsString",
         "outputVolumePath",
         "outputNotebookPath",
@@ -112,6 +102,7 @@ gold_df = (
 )
 
 gold_df.display()
+
 
 # COMMAND ----------
 
@@ -174,5 +165,3 @@ def write_files(row):
 
 pandas_gold = gold_df.toPandas()
 pandas_gold.apply(write_files, axis=1)
-
-# COMMAND ----------
