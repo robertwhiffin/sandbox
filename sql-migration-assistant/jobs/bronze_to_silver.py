@@ -85,7 +85,7 @@ spark.sql(
     agentName STRING,
     agentResponse STRING,
     outputNotebookPath STRING,
-    similarCodeNotebookPath STRING
+    similarCodeNotebooks ARRAY<ARRAY<STRING, DOUBLE>>,
     )
   """
 )
