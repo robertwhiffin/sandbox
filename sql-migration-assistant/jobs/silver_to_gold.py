@@ -38,13 +38,28 @@ output_volume_path = app_configs["VOLUME_NAME_OUTPUT_PATH"]
 
 # DBTITLE 1,function to write out a notebook as a string
 
+
 @udf(StringType())
-def write_notebook_code(llm_responses, url):
+def write_notebook_code(llm_responses, similar_code):
+    # parse the llm responses to get the explanation and translation
     for response in llm_responses:
         if "explanation_agent" == response[0]:
             explanation = response[1]
         elif "translation_agent" == response[0]:
             translated_code = response[1]
+    # parse the similar code into a nice format
+    # looks like [[url, similarity], ...]
+    # want to present it as a markdown table
+
+    table_header = """
+-- MAGIC | Notebook URL | Similarity Score |
+-- MAGIC |--------------|------------------|
+"""
+    table_rows = "\n".join(
+        [f"-- MAGIC | [Link]({item[0]}) | {round(item[1], 3)} |" for item in similar_code]
+    )
+    markdown_table = table_header + table_rows
+
 
     template = """
 -- Databricks notebook source
@@ -52,8 +67,8 @@ def write_notebook_code(llm_responses, url):
 -- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
 -- MAGIC
 -- MAGIC ### AI Detected Similar Code 
--- MAGIC 
--- MAGIC [This](SIMILAR_CODE_NOTEBOOK_URL) is the most similar notebook to the code you provided and may provide additional context and assistance for finetuning this output.
+-- MAGIC The table below shows gives the top 5 most similar notebooks to this one.
+SIMILAR_CODE_NOTEBOOKS
 -- MAGIC 
 -- MAGIC ### AI Generated Intent
 -- MAGIC
@@ -68,7 +83,7 @@ TRANSLATED_CODE_GOES_HERE
         template
         .replace("INTENT_GOES_HERE", explanation)
         .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
-        .replace("SIMILAR_CODE_NOTEBOOK_URL", url)
+        .replace("SIMILAR_CODE_NOTEBOOKS", markdown_table)
         )
     return output
 
