@@ -134,7 +134,7 @@ response = (
         )
     .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
     .withColumn(
-        "similarCodeNotebookPath", 
+        "similarCodeNotebooks",
         f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(f.lit(None))
     )
     .cache()
