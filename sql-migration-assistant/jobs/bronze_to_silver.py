@@ -59,7 +59,7 @@ bronze_holding_table = (
 spark.sql(
     f"""
   CREATE TABLE IF NOT EXISTS {bronze_holding_table} (
-    id LONG,
+    id INT,
     path STRING,
     modificationTime TIMESTAMP,
     length INT,
@@ -102,7 +102,9 @@ spark.sql(
     processedDateString STRING,
     notebookAsString STRING,
     outputVolumePath STRING,
-    outputNotebookPath STRING
+    outputNotebookPath STRING,
+    similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>,
+    agentResponses MAP<STRING,STRING>
     )
   """
 )

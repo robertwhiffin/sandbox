@@ -22,6 +22,7 @@ from pyspark.sql.functions import udf, pandas_udf
 agent_configs = json.loads(dbutils.widgets.get("agent_configs"))
 app_configs = json.loads(dbutils.widgets.get("app_configs"))
 record_id = dbutils.widgets.get("record_id")
+
 bronze_holding_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_holding_table'
 )
@@ -51,9 +52,10 @@ key = dbutils.secrets.get(scope=secret_scope, key=secret_key)
 
 ####################
 # udf to get the most similar code notebook path
-VS_INDEX_NAME= app_configs["VS_INDEX_NAME"]
-catalog=app_configs["CATALOG"]
-schema= app_configs["SCHEMA"]
+VS_INDEX_NAME = app_configs["VS_INDEX_NAME"]
+catalog = app_configs["CATALOG"]
+schema = app_configs["SCHEMA"]
+
 
 # Define the schema for the array of structs
 @udf(ArrayType(
@@ -72,14 +74,11 @@ def get_similar_code(intent):
         num_results=5,
     )
     data_array = results.result.data_array
-    # this if statement is necessary for when the index is empty (which it will be for the first run)
     if data_array:
         return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
     else:
         return None
 
-
-        
 
 ####################
 # udf to make LLM calls
@@ -113,8 +112,6 @@ def call_llm(input_code_series, agent_configs_series):
     return input_code_series.combine(agent_configs_series, process_row)
 
 
-
-
 # COMMAND ----------
 
 # DBTITLE 1,Call the AI Agents
@@ -134,34 +131,15 @@ response = (
             f.lit("batchTranslated"),
             f.col("processedDateString"),
             f.col("path"),
-            ),
-        )
+        ),
+    )
     .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
     .withColumn(
         "similarCodeNotebooks",
-        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(f.lit(None))
+        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(
+            f.lit(None))
     )
     .cache()
 )
 
 (response.write.mode("append").saveAsTable(silver_llm_responses))
-
-# COMMAND ----------
-
-temp_table_name = f"response{record_id}"
-response.createOrReplaceTempView(temp_table_name)
-spark.sql(
-    f"""
-MERGE INTO {code_intent_table} AS target
-USING (
-  SELECT hash(content) AS id, content AS code, agentResponse AS intent
-  FROM {temp_table_name}
-  WHERE agentName = "explanation_agent"
-) AS source
-ON target.id = source.id
-WHEN MATCHED THEN
-  UPDATE SET target.code = source.code, target.intent = source.intent
-WHEN NOT MATCHED THEN
-  INSERT (id, code, intent) VALUES (source.id, source.code, source.intent)
-"""
-)
