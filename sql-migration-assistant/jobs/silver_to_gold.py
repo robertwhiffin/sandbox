@@ -52,11 +52,11 @@ def write_notebook_code(llm_responses, similar_code):
     # want to present it as a markdown table
 
     table_header = """
--- MAGIC | Notebook URL | Similarity Score |
--- MAGIC |--------------|------------------|
+-- MAGIC | Notebook URL | Notebook Description | Similarity Score |
+-- MAGIC |--------------|----------------------|------------------|
 """
     table_rows = "\n".join(
-        [f"-- MAGIC | [Link]({item[0]}) | {round(item[1], 3)} |" for item in similar_code]
+        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {round(item[1], 3)} |" for item in similar_code]
     )
     markdown_table = table_header + table_rows
 
