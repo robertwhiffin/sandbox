@@ -55,8 +55,14 @@ VS_INDEX_NAME= app_configs["VS_INDEX_NAME"]
 catalog=app_configs["CATALOG"]
 schema= app_configs["SCHEMA"]
 
-# udf for getting the top 5 similar code files. Returns like [[url, intent, similarity], ...]
-@udf(ArrayType(ArrayType(StringType(),StringType(), DoubleType())))
+# Define the schema for the array of structs
+@udf(ArrayType(
+    StructType([
+        StructField("notebook_url", StringType(), True),
+        StructField("intent", StringType(), True),
+        StructField("similarity", DoubleType(), True)
+    ])
+))
 def get_similar_code(intent):
     w = WorkspaceClient(host=host, token=key)
     results = w.vector_search_indexes.query_index(
@@ -66,7 +72,8 @@ def get_similar_code(intent):
         num_results=5,
     )
     data_array = results.result.data_array
-    return data_array
+    return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
+
 
         
 
