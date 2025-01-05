@@ -38,9 +38,13 @@ class SimilarCodeTab:
                     ,type = "numpy"
                     , interactive=False
                 )
+            self.similar_code_notebook_url = gr.Markdown(
+                  visible=False
+                , label="Link to similar notebook"
+            )
             # show the intent of the similar code
             self.similar_intent = gr.Textbox(
-                label="The similar codes intent."
+                label="Similar Code Intent."
                 , interactive=False
                 , visible=False
             )
@@ -62,12 +66,7 @@ class SimilarCodeTab:
                     , interactive=False
                 , visible=False
                 )
-            # this textbook is hidden and is used to store the notebook url of the similar code to be passed to
-            # the preview tab when writing the translated file to the workspace
-            self.similar_code_notebook_url = gr.Textbox(
-                  interactive=False
-                , visible=False
-            )
+
 
             def find_similar_code_action(input):
                 '''
@@ -80,6 +79,7 @@ class SimilarCodeTab:
                 similar_code=retrieved_similar_code[0][0]
                 similar_intent=retrieved_similar_code[0][1]
                 similar_notebook_url=retrieved_similar_code[0][2]
+                similar_notebook_url = f"## [Link to similar code notebook]({similar_notebook_url})"
                 return [retrieved_similar_code, similar_code, similar_intent, similar_notebook_url]
 
 
@@ -95,11 +95,10 @@ class SimilarCodeTab:
                 outputs=[
                          self.find_similar_code,
                          self.similar_intent,
-                         self.retrieved_code,
-                         self.returned_code,
                          self.similar_code_selector,
                          self.similar_code_input,
                          self.similar_code_output,
+                         self.similar_code_notebook_url,
                          ],
             )
             # populate the intent and code of the selected similar code
