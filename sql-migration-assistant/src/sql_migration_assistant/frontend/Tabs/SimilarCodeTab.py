@@ -38,9 +38,11 @@ class SimilarCodeTab:
                     ,type = "numpy"
                     , interactive=False
                 )
-            self.similar_code_notebook_url = gr.Markdown(
+            self.similar_code_notebook_url = gr.Text(
                   visible=False
-                , label="Link to similar notebook"
+            )
+            self.similar_code_notebook_url_markdown = gr.Markdown(
+                visible=False
             )
             # show the intent of the similar code
             self.similar_intent = gr.Textbox(
@@ -79,15 +81,17 @@ class SimilarCodeTab:
                 similar_code=retrieved_similar_code[0][0]
                 similar_intent=retrieved_similar_code[0][1]
                 similar_notebook_url=retrieved_similar_code[0][2]
-                similar_notebook_url = f"## [Link to similar code notebook]({similar_notebook_url})"
-                return [retrieved_similar_code, similar_code, similar_intent, similar_notebook_url]
+                similar_notebook_url_markdown = f"## [Link to similar code notebook]({similar_notebook_url})"
+                return [retrieved_similar_code, similar_code, similar_intent, similar_notebook_url, similar_notebook_url_markdown]
 
 
             # When top button is clicked, get code and set everything to visible.
             self.find_similar_code.click(
                 fn=find_similar_code_action,
                 inputs=self.similar_code_input,
-                outputs=[self.returned_code, self.similar_code_output, self.similar_intent, self.similar_code_notebook_url]
+                outputs=[self.returned_code, self.similar_code_output
+                    , self.similar_intent, self.similar_code_notebook_url
+                         , self.similar_code_notebook_url_markdown]
             )
 
             self.find_similar_code.click(
@@ -98,7 +102,7 @@ class SimilarCodeTab:
                          self.similar_code_selector,
                          self.similar_code_input,
                          self.similar_code_output,
-                         self.similar_code_notebook_url,
+                         self.similar_code_notebook_url_markdown,
                          ],
             )
             # populate the intent and code of the selected similar code
