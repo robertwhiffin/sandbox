@@ -62,13 +62,26 @@ def write_notebook_code_with_similarity(llm_responses, similar_code):
     # looks like [[url, similarity], ...]
     # want to present it as a markdown table
 
+    def parse_similar_code_array(item):
+        notebook_url = item['notebook_url']
+        intent = item['intent'].replace("\n", "<br>")  # this lets the markdown table show the full comment
+        return f"-- MAGIC | [Link]({notebook_url}) | {intent} |"
+
     table_header = """
--- MAGIC | Notebook URL | Notebook Description | Similarity Score |
+-- MAGIC | Notebook URL | Notebook Description | Similarity Rank |
 -- MAGIC |--------------|----------------------|------------------|
 """
-    table_rows = "\n".join(
-        [f"-- MAGIC | [Link]({item[0]}) |{item[1]} | {str(round(float(item[2]), 3))} |" for item in similar_code]
-    )
+    # build the table rows. Will show a relative rank of similarity rather than the actual score. This is because
+    # the actual score may be confusing - rank is easier to understand
+    table_rows = []
+    rank = 1
+    for item in similar_code:
+        row_part = parse_similar_code_array(item)
+        row_full = row_part + f" {rank} |"
+        table_rows.append(row_full)
+        rank += 1
+
+    table_rows = "\n".join(table_rows)
     markdown_table = table_header + table_rows
 
     template = """
