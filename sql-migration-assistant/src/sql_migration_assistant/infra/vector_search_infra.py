@@ -159,7 +159,7 @@ class VectorSearchInfra:
                 index_type=VectorIndexType.DELTA_SYNC,
                 delta_sync_index_spec=DeltaSyncVectorIndexSpecRequest(
                     source_table=self.migration_assistant_VS_table,
-                    pipeline_type=PipelineType.CONTINUOUS,
+                    pipeline_type=PipelineType.TRIGGERED,
                     embedding_source_columns=[
                         EmbeddingSourceColumn(
                             embedding_model_endpoint_name=self.migration_assistant_embedding_model_name,
