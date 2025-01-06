@@ -159,13 +159,14 @@ class VectorSearchInfra:
                 index_type=VectorIndexType.DELTA_SYNC,
                 delta_sync_index_spec=DeltaSyncVectorIndexSpecRequest(
                     source_table=self.migration_assistant_VS_table,
-                    pipeline_type=PipelineType.TRIGGERED,
+                    pipeline_type=PipelineType.CONTINUOUS,
                     embedding_source_columns=[
                         EmbeddingSourceColumn(
                             embedding_model_endpoint_name=self.migration_assistant_embedding_model_name,
                             name="intent",
                         )
                     ],
+                    embedding_writeback_table=f"{self.migration_assistant_VS_index}_writeback_table"
                 ),
             )
         except ResourceAlreadyExists as e:

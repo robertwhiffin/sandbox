@@ -1,21 +1,28 @@
 # Databricks notebook source
 # DBTITLE 1,get params
 import json
-
+import datetime
 from pyspark.sql.types import (
+    ArrayType,
     StructType,
     StructField,
     StringType,
     MapType,
+    IntegerType,
+    TimestampType,
 )
+import pyspark.sql.functions as f
+from pyspark.sql.functions import udf, pandas_udf
 
 agent_configs = json.loads(dbutils.widgets.get("agent_configs"))
 app_configs = json.loads(dbutils.widgets.get("app_configs"))
+
 
 # COMMAND ----------
 
 checkpoint_dir = app_configs["VOLUME_NAME_CHECKPOINT_PATH"]
 volume_path = app_configs["VOLUME_NAME_INPUT_PATH"]
+
 
 # COMMAND ----------
 
@@ -64,6 +71,7 @@ spark.sql(
   """
 )
 
+
 silver_llm_responses = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.silver_llm_responses'
 )
@@ -72,13 +80,16 @@ spark.sql(
   CREATE TABLE IF NOT EXISTS {silver_llm_responses} (
     path STRING,
     promptID INT,
-    loadDatetime TIMESTAMP,
+    processedDateString STRING,
     content STRING, 
     agentName STRING,
-    agentResponse STRING
+    agentResponse STRING,
+    outputNotebookPath STRING,
+    similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>
     )
   """
 )
+
 
 gold_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.gold_transformed_notebooks'
@@ -88,13 +99,16 @@ spark.sql(
   CREATE TABLE IF NOT EXISTS {gold_table} (
     promptID INT,  
     content STRING,
-    loadDatetime TIMESTAMP,
+    processedDateString STRING,
     notebookAsString STRING,
     outputVolumePath STRING,
-    outputNotebookPath STRING
+    outputNotebookPath STRING,
+    similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>,
+    agentResponses MAP<STRING,STRING>
     )
   """
 )
+
 
 # COMMAND ----------
 
@@ -170,17 +184,16 @@ llm_inputs = spark.sql(
     modificationTime,
     length,
     content,
-    loadDatetime,
     promptID,
     agentConfigs
   from {bronze_raw_code} brc
   cross join (
-    select bpc.promptID, agentConfigs
+    select bpc.promptID, agentConfigs, loadDatetime
     from {bronze_prompt_config} bpc
     left anti join (
       select distinct promptID from {silver_llm_responses} 
     ) st on bpc.promptID = st.promptID  
-  )
+  ) 
   """
 )
 llm_inputs.write.mode("overwrite").saveAsTable(bronze_holding_table)
@@ -198,3 +211,6 @@ dbutils.jobs.taskValues.set(key="new_record_ids", value=ids)
 promptID = llm_inputs.select("promptID").distinct().collect()
 promptID = [x.promptID for x in promptID][0]
 dbutils.jobs.taskValues.set(key="promptID", value=promptID)
+
+# set a datetime value for the iteration loop to use
+dbutils.jobs.taskValues.set(key="processedDatetime", value=str(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")))

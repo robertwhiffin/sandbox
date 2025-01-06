@@ -33,6 +33,11 @@ class InteractiveOutputTab:
         
         TRANSLATED_CODE_GOES_HERE
               """
+            # this is ahidden box which will hold the url of the output notebook, which can be passed to the save intent
+            # function
+            self.hidden_url_textbox = gr.Textbox(
+                visible=False
+            )
             with gr.Row():
                 self.produce_preview_button = gr.Button("Produce Preview")
                 with gr.Column():
@@ -44,9 +49,4 @@ class InteractiveOutputTab:
 
             self.preview = gr.Code(label="Preview", language="python")
 
-            # write file to notebook
-            self.write_to_workspace_button.click(
-                fn=write_adhoc_to_workspace,
-                inputs=[self.file_name, self.preview],
-                outputs=self.adhoc_write_output,
-            )
+

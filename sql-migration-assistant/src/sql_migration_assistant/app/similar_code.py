@@ -1,6 +1,8 @@
 from databricks.labs.lsql.core import StatementExecutionExt
 from databricks.sdk import WorkspaceClient
 
+import gradio as gr
+
 
 class SimilarCode:
 
@@ -22,19 +24,19 @@ class SimilarCode:
         self.vs_index_name = VS_index_name
         self.vs_endpoint_name = VS_endpoint_name
 
-    def save_intent(self, code, intent):
+    def save_intent(self, code, intent, url):
         code_hash = hash(code)
         _ = self.see.execute(
-            f'INSERT INTO {self.catalog}.{self.schema}.{self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}")',
+            f'INSERT INTO {self.catalog}.{self.schema}.{self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
         )
 
-    def get_similar_code(self, chat_history):
-        intent = chat_history[-1][1]
+    def get_similar_code(self, intent):
+        gr.Info("Retrieving similar code...")
         results = self.w.vector_search_indexes.query_index(
             index_name=f"{self.catalog}.{self.schema}.{self.vs_index_name}",
-            columns=["code", "intent"],
+            columns=["code", "intent", "notebook_url"],
             query_text=intent,
-            num_results=1,
+            num_results=5,
         )
         docs = results.result.data_array
-        return (docs[0][0], docs[0][1])
+        return docs
