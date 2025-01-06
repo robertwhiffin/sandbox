@@ -153,6 +153,7 @@ def write_adhoc_to_workspace(file_name, preview, input_code, explained):
     # save the intent at the same time
     if explained:
         similar_code_helper.save_intent(input_code, explained, url)
+        similar_code_helper.sync_index()
 
     return output_message
 

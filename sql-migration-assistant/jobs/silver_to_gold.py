@@ -33,7 +33,7 @@ gold_table = (
 )
 
 code_intent_table = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_configs["CODE_INTENT_TABLE_NAME"]}'
-
+vs_index_name = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_configs["VS_INDEX_NAME"]}'
 prompt_id = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="promptID")
 output_volume_path = app_configs["VOLUME_NAME_OUTPUT_PATH"]
 
@@ -251,3 +251,5 @@ WHEN NOT MATCHED THEN
   INSERT (id, code, intent, notebook_url) VALUES (source.id, source.code, source.intent, source.notebook_url)
 """
 )
+
+w.vector_search_indexes.sync_index(index_name=vs_index_name)
