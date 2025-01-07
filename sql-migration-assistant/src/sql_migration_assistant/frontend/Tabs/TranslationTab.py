@@ -16,13 +16,17 @@ class TranslationTab:
             self.tab = tab
             self.header = gr.Markdown(
                 """
-            ## An AI tool to translate your code.
-    
-            In this tab you define the instructions for the AI agent on translating the code.
-            
-            Follow prompt engineering [best practices](https://www.databricks.com/glossary/prompt-engineering). Start 
-            simple and add complexity. 
-            """
+                ## An AI tool to translate your code.
+        
+                In this tab you define the instructions for the AI agent on translating the code.
+                
+                Follow prompt engineering [best practices](https://www.databricks.com/glossary/prompt-engineering). Start 
+                simple and add complexity. 
+                
+                
+                Once you are happy with your prompt, or you wish to explore and adapt the instructions others have used, 
+                you can do so in the *Load / save instructions* section. 
+                """
             )
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
@@ -45,14 +49,24 @@ class TranslationTab:
                     """
                 )
                 with gr.Row():
-                    self.save_translation_prompt = gr.Button("Save translation prompt")
-                    self.load_translation_prompt = gr.Button("Load translation prompt")
+                    self.save_translation_prompt = gr.Button("Save Agent Configuration")
+                    self.load_translation_prompt = gr.Button("Retrieve Saved Configurations")
                 # hidden button and display box for saved prompts, made visible when the load button is clicked
-                self.translation_prompt_id_to_load = gr.Textbox(
-                    label="Prompt ID to load",
-                    visible=False,
-                    placeholder="Enter the ID of the prompt to load from the table below.",
+                self.loading_instructions = gr.Markdown(
+                    "To load a saved configuration, enter the ID value in the *ID to load* box and click the *Load Agent Configuration Button*."
+                    ,visible=False
                 )
+                with gr.Row():
+                    self.translation_prompt_id_to_load = gr.Textbox(
+                        label="ID to load",
+                        visible=False,
+                        placeholder="Enter the ID of the configuration to load from the table below.",
+                    )
+
+                    self.load_translation_agent_config = gr.Button(
+                        "Load Agent Configuration",
+                        visible=False,
+                    )
                 self.loaded_translation_prompts = gr.Dataframe(
                     label="Saved prompts.",
                     visible=False,
@@ -122,10 +136,11 @@ class TranslationTab:
                     outputs=[self.loaded_translation_prompts],
                 )
                 # make the input box for the prompt id visible
+
                 self.load_translation_prompt.click(
-                    fn=lambda: gr.update(visible=True),
+                    fn=lambda: [gr.update(visible=True)]*3,
                     inputs=None,
-                    outputs=[self.translation_prompt_id_to_load],
+                    outputs=[self.translation_prompt_id_to_load, self.loading_instructions, self.load_translation_agent_config],
                 )
                 # retrive the row from the table and populate the system prompt, temperature, and max tokens
                 self.translation_prompt_id_to_load.change(
