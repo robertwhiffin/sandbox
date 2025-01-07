@@ -38,9 +38,22 @@ class UnityCatalogInfra:
         self.migration_assistant_UC_schema = "sql_migration_assistant"
 
         # user cannot change these values
+        # dictionary of table names and their schema which are iterated through and created
         self.tables = {
             "code_intent": f"(id BIGINT, code STRING, intent STRING, notebook_url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
-            "prompt_history": f"(id BIGINT GENERATED ALWAYS AS IDENTITY, agent STRING, prompt STRING, temperature DOUBLE, token_limit INT, save_time TIMESTAMP)",
+            "bronze_raw_code": f"(path STRING, modificationTime TIMESTAMP, length INT, content STRING,loadDatetime TIMESTAMP)",
+            "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
+            "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
+                                    f"loadDatetime TIMESTAMP, promptID INT, "
+                                    f"agentConfigs MAP <STRING, MAP <STRING, STRING>>)",
+            "silver_llm_responses": f"(path STRING, promptID INT, processedDateString STRING, content STRING, "
+                                    f"agentName STRING, agentResponse STRING, outputNotebookPath STRING, "
+                                    f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, "
+                                    f"similarity:DOUBLE>>)",
+            "gold_transformed_notebooks": f"(promptID INT, content STRING, processedDateString STRING, notebookAsString STRING, "
+                                          f"outputVolumePath STRING, outputNotebookPath STRING, "
+                                          f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>, "
+                                          f"agentResponses MAP<STRING,STRING>)",
         }
         self.volume_name = "sql_migration_assistant_volume"
         self.volume_dirs = {
@@ -52,7 +65,7 @@ class UnityCatalogInfra:
 
         # add values to config
         self.config["CODE_INTENT_TABLE_NAME"] = "code_intent"
-        self.config["PROMPT_HISTORY_TABLE_NAME"] = "prompt_history"
+        self.config["PROMPT_HISTORY_TABLE_NAME"] = "bronze_prompt_config"
 
     def choose_UC_catalog(self):
         """Ask the user to choose an existing Unity Catalog or create a new one."""
