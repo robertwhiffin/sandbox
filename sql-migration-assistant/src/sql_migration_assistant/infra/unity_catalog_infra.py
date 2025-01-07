@@ -45,7 +45,7 @@ class UnityCatalogInfra:
             "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
             "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
                                     f"loadDatetime TIMESTAMP, promptID INT, "
-                                    f"agentConfigs MAP <STRING, MAP <STRING, STRING>)",
+                                    f"agentConfigs MAP <STRING, MAP <STRING, STRING>>)",
             "silver_llm_responses": f"(path STRING, promptID INT, processedDateString STRING, content STRING, "
                                     f"agentName STRING, agentResponse STRING, outputNotebookPath STRING, "
                                     f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, "
