@@ -8,7 +8,7 @@ class InteractiveInputCodeTab:
     def __init__(self):
         with gr.Tab(label="Input code", visible=True) as tab:
             self.header = gr.Markdown(
-                f"""## Paste in some code to test your agents on.   
+                f"""## Paste your code below and click the "Ingest code".   
                 """
             )
             self.interactive_code_button = gr.Button("Ingest code")
