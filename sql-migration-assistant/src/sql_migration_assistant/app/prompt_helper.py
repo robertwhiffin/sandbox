@@ -1,5 +1,4 @@
 import gradio as gr
-import datetime
 
 class PromptHelper:
     def __init__(self, see, catalog, schema, prompt_table, foundation_model_name):
@@ -8,17 +7,7 @@ class PromptHelper:
         self.SCHEMA = schema
         self.PROMPT_TABLE = prompt_table
         self.FOUNDATION_MODEL_NAME = foundation_model_name
-    """
-    .select(f.col("promptID"), f.col("agentConfigs"), f.col("loadDatetime"))
-    
-    "translation_agent": {
-                        "system_prompt": translation_prompt,
-                        "endpoint": FOUNDATION_MODEL_NAME,
-                        "max_tokens": translation_max_tokens,
-                        "temperature": translation_temperature,
-                    }
-                    
-    """
+
     def get_prompts(self, agent):
         gr.Info("Retrieving Prompts...")
         response = self.see.execute(
@@ -35,18 +24,10 @@ class PromptHelper:
 
     def save_prompt(self, agent, prompt, temperature, token_limit):
         gr.Info("Saving prompt...")
-        agentConfig = {
-            agent: {
-                "system_prompt": prompt,
-                "endpoint": self.FOUNDATION_MODEL_NAME,
-                "temperature": temperature,
-                "max_tokens": token_limit
-            }
-        }
-        promptID = hash(str(datetime.datetime.now()))
+        agentConfig = f"MAP ('{agent}', MAP ('system_prompt', '{prompt}', 'temperature', '{temperature}', 'max_tokens', '{token_limit}'))"
         self.see.execute(
             f"INSERT INTO {self.CATALOG}.{self.SCHEMA}.{self.PROMPT_TABLE} "
             f"(promptID, agentConfigs, loadDatetime) "
-            f"VALUES ('{promptID}', '{agentConfig}',CURRENT_TIMESTAMP())"
+            f"VALUES (hash(CURRENT_TIMESTAMP()), {agentConfig} ,CURRENT_TIMESTAMP())"
         )
         gr.Info("Prompt saved")
