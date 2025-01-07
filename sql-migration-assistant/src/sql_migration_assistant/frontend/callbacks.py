@@ -38,7 +38,7 @@ translation_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_N
 intent_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)
 
 prompt_helper = PromptHelper(
-    see=see, catalog=CATALOG, schema=SCHEMA, prompt_table=PROMPT_HISTORY_TABLE_NAME
+    see=see, catalog=CATALOG, schema=SCHEMA, prompt_table=PROMPT_HISTORY_TABLE_NAME, foundation_model_name=FOUNDATION_MODEL_NAME
 )
 similar_code_helper = SimilarCode(
     workspace_client=w,
