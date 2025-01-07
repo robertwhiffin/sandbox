@@ -41,7 +41,6 @@ class UnityCatalogInfra:
         # dictionary of table names and their schema which are iterated through and created
         self.tables = {
             "code_intent": f"(id BIGINT, code STRING, intent STRING, notebook_url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
-            "prompt_history": f"(id BIGINT GENERATED ALWAYS AS IDENTITY, agent STRING, prompt STRING, temperature DOUBLE, token_limit INT, save_time TIMESTAMP)",
             "bronze_raw_code": f"(path STRING, modificationTime TIMESTAMP, length INT, content STRING,loadDatetime TIMESTAMP)",
             "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
             "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
@@ -66,7 +65,7 @@ class UnityCatalogInfra:
 
         # add values to config
         self.config["CODE_INTENT_TABLE_NAME"] = "code_intent"
-        self.config["PROMPT_HISTORY_TABLE_NAME"] = "prompt_history"
+        self.config["PROMPT_HISTORY_TABLE_NAME"] = "bronze_prompt_config"
 
     def choose_UC_catalog(self):
         """Ask the user to choose an existing Unity Catalog or create a new one."""
