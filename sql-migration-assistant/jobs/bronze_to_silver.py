@@ -25,30 +25,90 @@ volume_path = app_configs["VOLUME_NAME_INPUT_PATH"]
 
 
 # COMMAND ----------
-# set table names
 
 bronze_raw_code = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_raw_code'
-
+spark.sql(
+    f"""
+  CREATE TABLE IF NOT EXISTS {bronze_raw_code} (
+    path STRING,
+    modificationTime TIMESTAMP, 
+    length INT,
+    content STRING,
+    --content BINARY,
+    loadDatetime TIMESTAMP
+    )
+  """
+)
 
 bronze_prompt_config = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_prompt_config'
 )
-
+spark.sql(
+    f"""
+  CREATE TABLE IF NOT EXISTS {bronze_prompt_config} (
+    promptID INT,
+    agentConfigs MAP <STRING, MAP <STRING, STRING>>,
+    loadDatetime TIMESTAMP
+    )
+  """
+)
 
 bronze_holding_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_holding_table'
 )
-
+spark.sql(
+    f"""
+  CREATE TABLE IF NOT EXISTS {bronze_holding_table} (
+    id LONG,
+    path STRING,
+    modificationTime TIMESTAMP,
+    length INT,
+    content STRING,
+    loadDatetime TIMESTAMP,
+    promptID INT,
+    agentConfigs MAP <STRING, MAP <STRING, STRING>>
+    )
+  """
+)
 
 
 silver_llm_responses = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.silver_llm_responses'
+)
+spark.sql(
+    f"""
+  CREATE TABLE IF NOT EXISTS {silver_llm_responses} (
+    path STRING,
+    promptID INT,
+    processedDateString STRING,
+    content STRING, 
+    agentName STRING,
+    agentResponse STRING,
+    outputNotebookPath STRING,
+    similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>
+    )
+  """
 )
 
 
 gold_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.gold_transformed_notebooks'
 )
+spark.sql(
+    f"""
+  CREATE TABLE IF NOT EXISTS {gold_table} (
+    promptID INT,  
+    content STRING,
+    processedDateString STRING,
+    notebookAsString STRING,
+    outputVolumePath STRING,
+    outputNotebookPath STRING,
+    similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>,
+    agentResponses MAP<STRING,STRING>
+    )
+  """
+)
+
 
 # COMMAND ----------
 

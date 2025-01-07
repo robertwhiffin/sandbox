@@ -21,7 +21,6 @@ class PromptHelper:
         )
         return response.result.data_array
 
-
     def save_prompt(self, agent, prompt, temperature, token_limit):
         gr.Info("Saving prompt...")
         agentConfig = f"MAP ('{agent}', MAP ('system_prompt', '{prompt}', 'temperature', '{temperature}', 'max_tokens', '{token_limit}'))"
