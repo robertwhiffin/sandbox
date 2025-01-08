@@ -18,16 +18,19 @@ class CodeExplanationTab:
                 """
                 ## An AI tool to generate the intent of your code.
         
-                In this panel you need to iterate on the system prompt to refine the intent the AI generates for your code.
+                In this tab you define the instructions for the AI agent on explaining the code. 
                 This intent will be stored in Unity Catalog, and can be used for finding similar code, for documentation, 
                  and to help with writing new code in Databricks to achieve the same goal.
+                 
+                Once you are happy with your prompt, or you wish to explore and adapt the instructions others have used, 
+                you can do so in the *Load / save instructions* section. 
                 """
             )
-            with gr.Accordion(label="## Advanced Intent Settings", open=True):
+            with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the generating the intent of the input code.
 
-                    The *Temperature* paramater controls the randomness of the AI's response. Higher values will result in 
+                    The *Temperature* parameter controls the randomness of the AI's response. Higher values will result in 
                     more creative responses, while lower values will result in more predictable responses.
                     """
                 )
@@ -40,23 +43,30 @@ class CodeExplanationTab:
                         label="Max tokens. Check your LLM docs for limit.", value=3500
                     )
 
-                with gr.Row():
-                    self.intent_system_prompt = gr.Textbox(
-                        label="System prompt of the LLM to generate the intent.",
-                        placeholder="Add your system prompt here, for example:\n"
-                        "Explain the intent of this code with an example use case.",
-                        lines=3,
-                    )
+            with gr.Accordion(label="Load / save instructions", open=False):
+                gr.Markdown(
+                    """ ### Load a previously saved prompt.
+                    """
+                )
                     # these bits relate to saving and loading of prompts
                 with gr.Row():
-                    self.save_intent_prompt = gr.Button("Save intent prompt")
-                    self.load_intent_prompt = gr.Button("Load intent prompt")
+                    self.save_intent_prompt = gr.Button("Save Agent Configuration")
+                    self.load_intent_prompt = gr.Button("Retrieve Saved Configurations")
                 # hidden button and display box for saved prompts, made visible when the load button is clicked
-                self.intent_prompt_id_to_load = gr.Textbox(
-                    label="Prompt ID to load",
-                    visible=False,
-                    placeholder="Enter the ID of the prompt to load from the table below.",
+                self.loading_instructions = gr.Markdown(
+                    "To load a saved configuration, enter the ID value in the *ID to load* box and click the *Load Agent Configuration Button*."
+                    ,visible=False
                 )
+                with gr.Row():
+                    self.intent_prompt_id_to_load = gr.Textbox(
+                        label="ID to load",
+                        visible=False,
+                        placeholder="Enter the ID of the configuration to load from the table below.",
+                    )
+                    self.load_intent_agent_config = gr.Button(
+                        "Load Agent Configuration",
+                        visible=False,
+                    )
                 self.loaded_intent_prompts = gr.Dataframe(
                     label="Saved prompts.",
                     visible=False,
@@ -70,6 +80,54 @@ class CodeExplanationTab:
                     interactive=False,
                     wrap=True,
                 )
+
+
+            #with gr.Accordion(label="Intent Pane", open=True):
+            gr.Markdown(
+                """ ## Explaining code with AI."""
+            )
+            self.intent_system_prompt = gr.Textbox(
+                label="AI instructions for explaining the code",
+                placeholder="Add your instructions here, for example:\n"
+                            "Explain the intent of this code. Provide a concise summary of the intent of this code.\n"
+                            "This should be a description of the overall purpose of the code, not a breakdown of how the code achieves this purpose.\n"
+                            "Next, provide high level bullet points of the main steps in the code. This should be a list of the main steps in the code"
+                            ", not a line by line breakdown.\n",
+                lines=4,
+            )
+            self.explain_button = gr.Button("Explain")
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown(""" ## Input Code.""")
+
+                    # input code box
+                    self.intent_input_code = gr.Code(
+                        label="Input Code",
+                        language="sql", # default, this can be updated
+                    )
+
+                with gr.Column():
+                    # divider subheader
+                    gr.Markdown(""" ## Code Explanation.""")
+                    # output box of the translated code
+                    self.explained = gr.Textbox(
+                        label="AI Agent Output.",
+                        interactive=False,
+                        lines=4
+                    )
+
+                # reset hidden chat history and prompt
+                # do translation
+                self.explain_button.click(
+                    fn=llm_intent_wrapper,
+                    inputs=[
+                        self.intent_system_prompt,
+                        self.intent_input_code,
+                        self.intent_max_tokens,
+                        self.intent_temperature,
+                    ],
+                    outputs=self.explained,
+                )
                 # get the prompts and populate the table and make it visible
                 self.load_intent_prompt.click(
                     fn=lambda: gr.update(
@@ -81,12 +139,12 @@ class CodeExplanationTab:
                 )
                 # make the input box for the prompt id visible
                 self.load_intent_prompt.click(
-                    fn=lambda: gr.update(visible=True),
+                    fn=lambda: [gr.update(visible=True)]*3,
                     inputs=None,
-                    outputs=[self.intent_prompt_id_to_load],
+                    outputs=[self.intent_prompt_id_to_load, self.load_intent_agent_config, self.loading_instructions],
                 )
 
-                self.intent_prompt_id_to_load.change(
+                self.load_intent_agent_config.click(
                     fn=get_prompt_details,
                     inputs=[
                         self.intent_prompt_id_to_load,
@@ -109,39 +167,4 @@ class CodeExplanationTab:
                         self.intent_max_tokens,
                     ],
                     outputs=None,
-                )
-
-            with gr.Accordion(label="Intent Pane", open=True):
-                gr.Markdown(""" ## AI Generated Code Intent.""")
-                self.explain_button = gr.Button("Explain")
-                with gr.Row():
-                    with gr.Column():
-                        gr.Markdown(""" ## Input Code.""")
-
-                        # input code box
-                        self.intent_input_code = gr.Code(
-                            label="Input Code",
-                            language="sql",  # default, this can be updated
-                        )
-                        # a button labelled translate
-
-                    with gr.Column():
-                        # divider subheader
-                        gr.Markdown(""" ## Code intent""")
-                        # output box of the translated code
-                        self.explained = gr.Textbox(
-                            label="AI generated intent of your code."
-                        )
-
-                # reset hidden chat history and prompt
-                # do translation
-                self.explain_button.click(
-                    fn=llm_intent_wrapper,
-                    inputs=[
-                        self.intent_system_prompt,
-                        self.intent_input_code,
-                        self.intent_max_tokens,
-                        self.intent_temperature,
-                    ],
-                    outputs=self.explained,
                 )

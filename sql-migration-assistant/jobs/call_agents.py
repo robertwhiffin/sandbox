@@ -1,14 +1,20 @@
 # Databricks notebook source
-import json
-
-import pyspark.sql.functions as f
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
-from pyspark.sql.functions import pandas_udf
+import json
+import os
 from pyspark.sql.types import (
+    ArrayType,
+    StructType,
+    StructField,
     StringType,
     MapType,
+    IntegerType,
+    TimestampType,
+    DoubleType,
 )
+import pyspark.sql.functions as f
+from pyspark.sql.functions import udf, pandas_udf
 
 # COMMAND ----------
 
@@ -16,6 +22,7 @@ from pyspark.sql.types import (
 agent_configs = json.loads(dbutils.widgets.get("agent_configs"))
 app_configs = json.loads(dbutils.widgets.get("app_configs"))
 record_id = dbutils.widgets.get("record_id")
+
 bronze_holding_table = (
     f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_holding_table'
 )
@@ -28,6 +35,12 @@ secret_scope = app_configs["DATABRICKS_TOKEN_SECRET_SCOPE"]
 secret_key = app_configs["DATABRICKS_TOKEN_SECRET_KEY"]
 host = app_configs["DATABRICKS_HOST"]
 
+workspace_location = app_configs["WORKSPACE_LOCATION"]
+workspace_location = "/Workspace" + workspace_location
+
+# get the processedDatetime value set in the first task
+processedDatetime = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="processedDatetime")
+
 # COMMAND ----------
 
 print(record_id)
@@ -37,7 +50,38 @@ print(record_id)
 # need this for when workspace client is created during a job
 key = dbutils.secrets.get(scope=secret_scope, key=secret_key)
 
+####################
+# udf to get the most similar code notebook path
+VS_INDEX_NAME = app_configs["VS_INDEX_NAME"]
+catalog = app_configs["CATALOG"]
+schema = app_configs["SCHEMA"]
 
+
+# Define the schema for the array of structs
+@udf(ArrayType(
+    StructType([
+        StructField("notebook_url", StringType(), True),
+        StructField("intent", StringType(), True),
+        StructField("similarity", DoubleType(), True)
+    ])
+))
+def get_similar_code(intent):
+    w = WorkspaceClient(host=host, token=key)
+    results = w.vector_search_indexes.query_index(
+        index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
+        columns=["notebook_url", "intent"],
+        query_text=intent,
+        num_results=5,
+    )
+    data_array = results.result.data_array
+    if data_array:
+        return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
+    else:
+        return None
+
+
+####################
+# udf to make LLM calls
 @pandas_udf(MapType(StringType(), StringType()))
 def call_llm(input_code_series, agent_configs_series):
     def process_row(input_code, agent_configs):
@@ -70,34 +114,32 @@ def call_llm(input_code_series, agent_configs_series):
 
 # COMMAND ----------
 
+# DBTITLE 1,Call the AI Agents
 response = (
     spark.read.table(bronze_holding_table)
     .where(f.col("id") == f.lit(record_id))
     .withColumn("llm_responses", call_llm(f.col("content"), f.col("agentConfigs")))
     .withColumn("agentName", f.map_keys(f.col("agentConfigs")).getItem(0))
     .withColumn("agentResponse", f.map_values(f.col("llm_responses")).getItem(0))
-    .select("path", "promptID", "loadDatetime", "content", "agentName", "agentResponse")
+    .withColumn("processedDateString", f.lit(processedDatetime))
+    .withColumn(
+        "outputNotebookPath",
+        f.concat_ws(
+            "/",
+            f.lit(workspace_location),
+            f.lit("outputNotebooks"),
+            f.lit("batchTranslated"),
+            f.col("processedDateString"),
+            f.col("path"),
+        ),
+    )
+    .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
+    .withColumn(
+        "similarCodeNotebooks",
+        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(
+            f.lit(None))
+    )
     .cache()
 )
 
 (response.write.mode("append").saveAsTable(silver_llm_responses))
-
-# COMMAND ----------
-
-temp_table_name = f"response{record_id}"
-response.createOrReplaceTempView(temp_table_name)
-spark.sql(
-    f"""
-MERGE INTO {code_intent_table} AS target
-USING (
-  SELECT hash(content) AS id, content AS code, agentResponse AS intent
-  FROM {temp_table_name}
-  WHERE agentName = "explanation_agent"
-) AS source
-ON target.id = source.id
-WHEN MATCHED THEN
-  UPDATE SET target.code = source.code, target.intent = source.intent
-WHEN NOT MATCHED THEN
-  INSERT (id, code, intent) VALUES (source.id, source.code, source.intent)
-"""
-)

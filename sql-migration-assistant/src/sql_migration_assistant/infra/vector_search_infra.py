@@ -166,6 +166,7 @@ class VectorSearchInfra:
                             name="intent",
                         )
                     ],
+                    embedding_writeback_table=f"{self.migration_assistant_VS_index}_writeback_table"
                 ),
             )
         except ResourceAlreadyExists as e:

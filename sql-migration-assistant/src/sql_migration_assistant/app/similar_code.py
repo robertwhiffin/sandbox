@@ -1,6 +1,8 @@
 from databricks.labs.lsql.core import StatementExecutionExt
 from databricks.sdk import WorkspaceClient
 
+import gradio as gr
+
 
 class SimilarCode:
 
@@ -18,23 +20,27 @@ class SimilarCode:
         self.see = see
         self.catalog = catalog
         self.schema = schema
-        self.code_intent_table_name = code_intent_table_name
-        self.vs_index_name = VS_index_name
+        # FQN = Fully Qualified Name
+        self.code_intent_table_FQN = f"{catalog}.{schema}.{code_intent_table_name}"
+        self.vs_index_FQN = f"{catalog}.{schema}.{VS_index_name}"
         self.vs_endpoint_name = VS_endpoint_name
 
-    def save_intent(self, code, intent):
+    def save_intent(self, code, intent, url):
         code_hash = hash(code)
         _ = self.see.execute(
-            f'INSERT INTO {self.catalog}.{self.schema}.{self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}")',
+            f'INSERT INTO {self.code_intent_table_FQN} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
         )
 
-    def get_similar_code(self, chat_history):
-        intent = chat_history[-1][1]
+    def get_similar_code(self, intent):
+        gr.Info("Retrieving similar code...")
         results = self.w.vector_search_indexes.query_index(
-            index_name=f"{self.catalog}.{self.schema}.{self.vs_index_name}",
-            columns=["code", "intent"],
+            index_name=f"{self.vs_index_FQN}",
+            columns=["code", "intent", "notebook_url"],
             query_text=intent,
-            num_results=1,
+            num_results=5,
         )
         docs = results.result.data_array
-        return (docs[0][0], docs[0][1])
+        return docs
+
+    def sync_index(self):
+        self.w.vector_search_indexes.sync_index(index_name=self.vs_index_FQN)

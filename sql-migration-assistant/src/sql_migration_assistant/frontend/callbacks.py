@@ -38,7 +38,7 @@ translation_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_N
 intent_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)
 
 prompt_helper = PromptHelper(
-    see=see, catalog=CATALOG, schema=SCHEMA, prompt_table=PROMPT_HISTORY_TABLE_NAME
+    see=see, catalog=CATALOG, schema=SCHEMA, prompt_table=PROMPT_HISTORY_TABLE_NAME, foundation_model_name=FOUNDATION_MODEL_NAME
 )
 similar_code_helper = SimilarCode(
     workspace_client=w,
@@ -54,7 +54,8 @@ similar_code_helper = SimilarCode(
 def list_files(path_to_volume):
     file_infos = w.dbutils.fs.ls(path_to_volume)
     file_names = [x.name for x in file_infos]
-    return file_names
+    file_name_radio = gr.Radio(label="Select Code File", choices=file_names)
+    return file_name_radio
 
 
 def make_status_box_visible():
@@ -80,31 +81,60 @@ def llm_translate_wrapper(system_prompt, input_code, max_tokens, temperature):
     return translated_code
 
 
-def produce_preview(explanation, translated_code):
-    template = """
-    -- Databricks notebook source
-    -- MAGIC %md
-    -- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
-    -- MAGIC
-    -- MAGIC ### AI Generated Intent
-    -- MAGIC
-    -- MAGIC INTENT_GOES_HERE
-
-    -- COMMAND ----------
-
-    TRANSLATED_CODE_GOES_HERE
-    """
-    preview_code = template.replace("INTENT_GOES_HERE", explanation).replace(
-        "TRANSLATED_CODE_GOES_HERE", translated_code
-    )
-    return preview_code
+def produce_preview(explanation, translated_code, similar_code_notebook_url):
+    if similar_code_notebook_url:
+        template = """
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
+-- MAGIC
+-- MAGIC ### AI Detected Similar Code 
+-- MAGIC 
+-- MAGIC [This](SIMILAR_CODE_NOTEBOOK_URL)) is the most similar notebook to the code you provided and may provide additional context and assistance for finetuning this output.
+-- MAGIC 
+-- MAGIC ### AI Generated Intent
+-- MAGIC
+-- MAGIC INTENT_GOES_HERE
 
 
-def write_adhoc_to_workspace(file_name, preview):
+-- COMMAND ----------
+
+TRANSLATED_CODE_GOES_HERE
+        """.strip()
+        preview_code = (
+            template.replace("INTENT_GOES_HERE", explanation)
+            .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
+            .replace("SIMILAR_CODE_NOTEBOOK_URL", similar_code_notebook_url)
+        )
+        return preview_code
+    else:
+        gr.Info("Similar code not provided. Did you mean to use the Similar Code tab?")
+        template = """
+-- Databricks notebook source
+-- MAGIC %md
+-- MAGIC # This notebook was AI generated. AI can make mistakes. This is provided as a tool to accelerate your migration. 
+-- MAGIC
+-- MAGIC ### AI Generated Intent
+-- MAGIC
+-- MAGIC INTENT_GOES_HERE
+
+
+-- COMMAND ----------
+
+TRANSLATED_CODE_GOES_HERE
+        """.strip()
+        preview_code = (
+            template.replace("INTENT_GOES_HERE", explanation)
+            .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
+        )
+        return preview_code
+
+
+def write_adhoc_to_workspace(file_name, preview, input_code, explained):
     if len(file_name) == 0:
         raise gr.Error("Please provide a filename")
 
-    notebook_path_root = f"{WORKSPACE_LOCATION}/outputNotebooks/{str(datetime.datetime.now()).replace(':', '_')}"
+    notebook_path_root = f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{str(datetime.datetime.now().date()).replace(':', '_')}"
     notebook_path = f"{notebook_path_root}/{file_name}"
     content = preview
     w.workspace.mkdirs(notebook_path_root)
@@ -119,6 +149,12 @@ def write_adhoc_to_workspace(file_name, preview):
     id = _.object_id
     url = f"{w.config.host}/#notebook/{id}"
     output_message = f"Notebook {file_name} written to Databricks [here]({url})"
+
+    # save the intent at the same time
+    if explained:
+        similar_code_helper.save_intent(input_code, explained, url)
+        similar_code_helper.sync_index()
+
     return output_message
 
 
@@ -166,6 +202,7 @@ def exectute_workflow(
         ),
         "DATABRICKS_TOKEN_SECRET_KEY": os.environ.get("DATABRICKS_TOKEN_SECRET_KEY"),
         "CODE_INTENT_TABLE_NAME": os.environ.get("CODE_INTENT_TABLE_NAME"),
+        "VS_INDEX_NAME":VS_INDEX_NAME,
         "WORKSPACE_LOCATION": WORKSPACE_LOCATION,
     }
 
@@ -185,16 +222,10 @@ def exectute_workflow(
     textbox_message = (
         f"Job run initiated. Click [here]({job_url}) to view the job status. "
         f"You just executed the run with run_id: {run_id}\n"
-        f"Output notebooks will be written to the Workspace for immediate use at *{WORKSPACE_LOCATION}/outputNotebooks*"
+        f"Output notebooks will be written to the Workspace for immediate use at *{WORKSPACE_LOCATION}/outputNotebooks/batchTranslated*"
         f", and also in the *Output Code* folder in the UC Volume [here]({DATABRICKS_HOST}/explore/data/volumes/{CATALOG}/{SCHEMA}/{VOLUME_NAME})"
     )
     return textbox_message
-
-
-def save_intent_wrapper(input_code, explained):
-    gr.Info("Saving intent")
-    similar_code_helper.save_intent(input_code, explained)
-    gr.Info("Intent saved")
 
 
 # retreive the row from the table and populate the system prompt, temperature, and max tokens

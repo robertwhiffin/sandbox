@@ -18,7 +18,7 @@ from sql_migration_assistant.frontend.callbacks import (
     read_code_file,
     produce_preview,
     exectute_workflow,
-    save_intent_wrapper,
+    write_adhoc_to_workspace
 )
 
 
@@ -42,13 +42,7 @@ class GradioFrontend:
             self.interactive_output_tab = InteractiveOutputTab()
             self.config_tab = ConfigTab()
 
-            self.similar_code_tab.submit.click(
-                save_intent_wrapper,
-                inputs=[
-                    self.translation_tab.translation_input_code,
-                    self.code_explanation_tab.explained,
-                ],
-            )
+            # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(
                 exectute_workflow,
                 inputs=[
@@ -61,14 +55,30 @@ class GradioFrontend:
                 ],
                 outputs=self.batch_output_tab.run_status,
             )
+
+            # produce preview when in interactive mode
             self.interactive_output_tab.produce_preview_button.click(
                 produce_preview,
                 inputs=[
                     self.code_explanation_tab.explained,
                     self.translation_tab.translated,
+                    self.similar_code_tab.similar_code_notebook_url
                 ],
                 outputs=self.interactive_output_tab.preview,
             )
+
+            # write file to notebook when in interactive mode
+            self.interactive_output_tab.write_to_workspace_button.click(
+                fn=write_adhoc_to_workspace,
+                inputs=[
+                    self.interactive_output_tab.file_name,
+                    self.interactive_output_tab.preview,
+                    self.code_explanation_tab.intent_input_code,
+                    self.code_explanation_tab.explained,
+                ],
+                outputs=self.interactive_output_tab.adhoc_write_output,
+            )
+
 
         # collect all the input and output objects into a list to make it simpler to update them
         self.code_input_objects = [
@@ -124,7 +134,7 @@ class GradioFrontend:
                 self.instructions_tab.operation,
                 tab.tab,
             )
-        for tab in [self.interactive_input_code_tab, self.interactive_output_tab]:
+        for tab in [self.interactive_input_code_tab, self.interactive_output_tab, self.similar_code_tab]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x == "Interactive mode"))),
                 self.instructions_tab.operation,
