@@ -100,9 +100,9 @@ class CodeExplanationTab:
                 )
                 # save the prompt
                 self.save_intent_prompt.click(
-                fn=lambda prompt, temp, tokens: prompt_helper.save_prompt(
-                    "intent_agent", prompt, temp, tokens
-                ),
+                    fn=lambda prompt, temp, tokens: prompt_helper.save_prompt(
+                        "intent_agent", prompt, temp, tokens
+                    ),
                     inputs=[
                         self.intent_system_prompt,
                         self.intent_temperature,
@@ -112,9 +112,7 @@ class CodeExplanationTab:
                 )
 
             with gr.Accordion(label="Intent Pane", open=True):
-                gr.Markdown(
-                    """ ## AI Generated Code Intent."""
-                )
+                gr.Markdown(""" ## AI Generated Code Intent.""")
                 self.explain_button = gr.Button("Explain")
                 with gr.Row():
                     with gr.Column():
@@ -123,7 +121,7 @@ class CodeExplanationTab:
                         # input code box
                         self.intent_input_code = gr.Code(
                             label="Input Code",
-                            language="sql", # default, this can be updated
+                            language="sql",  # default, this can be updated
                         )
                         # a button labelled translate
 

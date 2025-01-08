@@ -70,7 +70,6 @@ class GradioFrontend:
                 outputs=self.interactive_output_tab.preview,
             )
 
-
         # collect all the input and output objects into a list to make it simpler to update them
         self.code_input_objects = [
             self.interactive_input_code_tab.interactive_code,
@@ -135,18 +134,19 @@ class GradioFrontend:
     def update_input_language(self):
         def inner(language):
             return [gr.update(language=language)] * len(self.code_input_objects)
+
         self.instructions_tab.input_language.input(
             fn=inner,
             inputs=self.instructions_tab.input_language,
-            outputs= self.code_input_objects
+            outputs=self.code_input_objects,
         )
-
 
     def update_output_language(self):
         def inner(language):
             return [gr.update(language=language)] * len(self.code_output_objects)
+
         self.instructions_tab.output_language.input(
             fn=inner,
             inputs=self.instructions_tab.output_language,
-            outputs= self.code_output_objects
+            outputs=self.code_output_objects,
         )

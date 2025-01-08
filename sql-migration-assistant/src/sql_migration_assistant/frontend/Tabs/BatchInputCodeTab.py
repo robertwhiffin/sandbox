@@ -30,8 +30,6 @@ class BatchInputCodeTab:
 
             self.load_files = gr.Button("Load Files from Volume")
             self.select_code_file = gr.Radio(label="Select Code File")
-            self.selected_file = gr.Code(
-                label="Selected Code File", language="sql"
-            )
+            self.selected_file = gr.Code(label="Selected Code File", language="sql")
 
             self.load_files.click(list_files, self.volume_path, self.select_code_file)
