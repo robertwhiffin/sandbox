@@ -4,6 +4,7 @@ from pyarrow import output_stream
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
 from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
+from sql_migration_assistant.frontend.Tabs.ConfigTab import ConfigTab
 from sql_migration_assistant.frontend.Tabs.InstructionsTab import InstructionsTab
 from sql_migration_assistant.frontend.Tabs.InteractiveInputCodeTab import (
     InteractiveInputCodeTab,
@@ -39,6 +40,7 @@ class GradioFrontend:
             self.similar_code_tab = SimilarCodeTab()
             self.batch_output_tab = BatchOutputTab()
             self.interactive_output_tab = InteractiveOutputTab()
+            self.config_tab = ConfigTab()
 
             self.similar_code_tab.submit.click(
                 save_intent_wrapper,
