@@ -25,17 +25,17 @@ from sql_migration_assistant.config import (
     WORKSPACE_LOCATION,
     VOLUME_NAME,
     DATABRICKS_TOKEN,
-    PROMPT_HISTORY_TABLE_NAME,
+    PROMPT_HISTORY_TABLE_NAME, config,
 )
 
 openai_client = OpenAI(
     api_key=DATABRICKS_TOKEN, base_url=f"{DATABRICKS_HOST}/serving-endpoints"
 )
 
-w = WorkspaceClient(product="sql_migration_assistant", product_version="0.0.1")
+w = WorkspaceClient(product="sql_migration_assistant", product_version="0.0.1", profile="demo-east")
 see = StatementExecutionExt(w, warehouse_id=SQL_WAREHOUSE_ID)
-translation_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)
-intent_llm = LLMCalls(openai_client, foundation_llm_name=FOUNDATION_MODEL_NAME)
+translation_llm = LLMCalls(openai_client)
+intent_llm = LLMCalls(w)
 
 prompt_helper = PromptHelper(
     see=see, catalog=CATALOG, schema=SCHEMA, prompt_table=PROMPT_HISTORY_TABLE_NAME, foundation_model_name=FOUNDATION_MODEL_NAME
@@ -70,13 +70,15 @@ def read_code_file(volume_path, file_name):
 
 
 def llm_intent_wrapper(system_prompt, input_code, max_tokens, temperature):
-    intent = intent_llm.llm_intent(system_prompt, input_code, max_tokens, temperature)
+    model_name = config.get("INTENT_MODEL_NAME")
+    intent = intent_llm.llm_intent(system_prompt, input_code, model_name, max_tokens, temperature)
     return intent
 
 
 def llm_translate_wrapper(system_prompt, input_code, max_tokens, temperature):
+    model_name = config.get("TRANSLATION_MODEL_NAME")
     translated_code = translation_llm.llm_translate(
-        system_prompt, input_code, max_tokens, temperature
+        system_prompt, input_code, model_name, max_tokens, temperature
     )
     return translated_code
 

@@ -1,5 +1,7 @@
 import gradio as gr
+from databricks.sdk import WorkspaceClient
 
+from sql_migration_assistant.config import config
 from sql_migration_assistant.frontend.callbacks import (
     llm_intent_wrapper,
     get_prompt_details,
@@ -10,6 +12,15 @@ from sql_migration_assistant.frontend.callbacks import (
 class CodeExplanationTab:
     header: gr.Markdown
     tab: gr.Tab
+
+    w = WorkspaceClient(profile="demo-east")
+
+    pay_per_token_models = [
+        "databricks-meta-llama-3-1-405b-instruct",
+        "databricks-meta-llama-3-1-70b-instruct",
+        "databricks-dbrx-instruct",
+        "databricks-mixtral-8x7b-instruct",
+    ]
 
     def __init__(self):
         with gr.Tab(label="Code Explanation") as tab:
@@ -26,6 +37,18 @@ class CodeExplanationTab:
                 you can do so in the *Load / save instructions* section. 
                 """
             )
+            foundation_model_dropdown = gr.Dropdown(
+                choices=[
+                    ("" if e.name not in self.pay_per_token_models else "PPT - ")
+                    + e.name
+                    for e in self.w.serving_endpoints.list()
+                    if e.name
+                ],
+                label="Foundation Endpoint",
+                interactive=True,
+                value=config.get("INTENT_MODEL_NAME"),
+            )
+            foundation_model_dropdown.change(lambda x: config.set_config("INTENT_MODEL_NAME", x if not x.startswith("PPT - ") else x[6:]), inputs=foundation_model_dropdown)
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the generating the intent of the input code.

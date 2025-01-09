@@ -26,11 +26,14 @@ SECRET_SCOPE = os.environ.get("SECRET_SCOPE")
 EMBEDDING_ENDPOINT = os.environ.get("EMBEDDING_ENDPOINT")
 
 
-yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yaml"
+yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 
 class Config:
     config: dict = {}
+
+    def __init__(self):
+        self.from_yaml()
 
     def from_yaml(self):
         with open(yaml_path, "r") as f:
@@ -43,3 +46,8 @@ class Config:
     def to_yaml(self):
         with open(yaml_path, "w") as f:
             yaml.safe_dump(self.config, f)
+
+    def get(self, key):
+        return self.config.get(key, "")
+
+config = Config()
