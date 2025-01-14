@@ -1,7 +1,7 @@
 import gradio as gr
 from pyarrow import output_stream
 
-from sql_migration_assistant.config import Config, config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
 from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
@@ -22,7 +22,7 @@ from sql_migration_assistant.frontend.callbacks import (
     write_adhoc_to_workspace
 )
 from sql_migration_assistant.utils import logger
-
+config = get_config()
 
 class GradioFrontend:
     intro = """<img align="right" src="https://asset.brandfetch.io/idSUrLOWbH/idm22kWNaH.png" alt="logo" width="120">

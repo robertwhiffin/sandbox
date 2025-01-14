@@ -24,7 +24,7 @@ class Config:
 
 
     def __init__(self, profile = None):
-        self.from_yaml()
+        self.from_environ()
         self.profile = os.environ.get("DATABRICKS_PROFILE") if profile is None else profile
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
@@ -56,6 +56,9 @@ class Config:
             for _, row in config.iterrows():
                 self.config[row["key"]] = row["value"]
 
+    def from_environ(self):
+        for key in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
+            self.config[key] = os.environ.get(key)
 
     def from_yaml(self):
         with open(yaml_path, "r") as f:
@@ -81,7 +84,7 @@ class Config:
     def validate_first_setup(self):
         """Validate the initial configuration"""
         errors = []
-        for k in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME", "DEPLOYMENT_MODE"]:
+        for k in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
             errors.extend(self.validate_key_exists(k))
 
         if self.config.get("DEPLOYMENT_MODE") == "app":
