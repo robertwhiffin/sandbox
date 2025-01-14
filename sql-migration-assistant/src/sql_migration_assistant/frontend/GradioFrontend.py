@@ -1,10 +1,12 @@
 import gradio as gr
 from pyarrow import output_stream
 
+from sql_migration_assistant.config import Config, config
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
 from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
 from sql_migration_assistant.frontend.Tabs.ConfigTab import ConfigTab
+from sql_migration_assistant.frontend.Tabs.InitialSetupTab import InitialSetupTab
 from sql_migration_assistant.frontend.Tabs.InstructionsTab import InstructionsTab
 from sql_migration_assistant.frontend.Tabs.InteractiveInputCodeTab import (
     InteractiveInputCodeTab,
@@ -27,20 +29,29 @@ class GradioFrontend:
 
 # Databricks Legion Migration Accelerator
 """
-
     def __init__(self):
         with gr.Blocks(theme=gr.themes.Soft()) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
-            self.instructions_tab = InstructionsTab()
+            with gr.Tabs() as self.tabs:
+                self.initialized = config.initial_setup_done()
 
-            self.interactive_input_code_tab = InteractiveInputCodeTab()
-            self.batch_input_code_tab = BatchInputCodeTab()
-            self.code_explanation_tab = CodeExplanationTab()
-            self.translation_tab = TranslationTab()
-            self.similar_code_tab = SimilarCodeTab()
-            self.batch_output_tab = BatchOutputTab()
-            self.interactive_output_tab = InteractiveOutputTab()
-            self.config_tab = ConfigTab()
+                self.initial_setup = InitialSetupTab(not self.initialized)
+                self.instructions_tab = InstructionsTab(self.initialized)
+
+                self.interactive_input_code_tab = InteractiveInputCodeTab(self.initialized)
+                self.batch_input_code_tab = BatchInputCodeTab(self.initialized)
+                self.code_explanation_tab = CodeExplanationTab(self.initialized)
+                self.translation_tab = TranslationTab(self.initialized)
+                self.similar_code_tab = SimilarCodeTab(self.initialized)
+                self.batch_output_tab = BatchOutputTab(self.initialized)
+                self.interactive_output_tab = InteractiveOutputTab(self.initialized)
+                self.config_tab = ConfigTab(self.initialized)
+
+            def set_initialized():
+                self.initialized = True
+                return [gr.update(visible=False), gr.update(visible=True), gr.Tabs(selected=self.instructions_tab.tab.id)]
+
+            self.initial_setup.save_config.click(set_initialized, inputs=None, outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs])
 
             # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(
@@ -97,9 +108,10 @@ class GradioFrontend:
         with self.app:
             self.add_logic_loading_batch_mode()
             self.add_logic_loading_interactive_mode()
-            self.change_tabs_based_on_operation_mode()
+            self.change_tab_visibility()
             self.update_input_language()
             self.update_output_language()
+            self.app.load()
 
     def add_logic_loading_batch_mode(self):
 
@@ -127,7 +139,7 @@ class GradioFrontend:
             outputs=self.code_input_objects,
         )
 
-    def change_tabs_based_on_operation_mode(self):
+    def change_tab_visibility(self):
         for tab in [self.batch_input_code_tab, self.batch_output_tab]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x != "Interactive mode"))),
@@ -137,6 +149,12 @@ class GradioFrontend:
         for tab in [self.interactive_input_code_tab, self.interactive_output_tab, self.similar_code_tab]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x == "Interactive mode"))),
+                self.instructions_tab.operation,
+                tab.tab,
+            )
+        for tab in [self.translation_tab, self.code_explanation_tab, self.config_tab]:
+            self.instructions_tab.operation.change(
+                lambda x: (gr.update(visible=True)),
                 self.instructions_tab.operation,
                 tab.tab,
             )

@@ -8,9 +8,8 @@ class InteractiveOutputTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Write file to Workspace") as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Write file to Workspace", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 f""" ## Write to Workspace
 

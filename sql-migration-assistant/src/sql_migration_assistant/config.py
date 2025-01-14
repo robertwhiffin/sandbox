@@ -3,6 +3,11 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
+from databricks.sdk.errors import NotFound
+
+from sql_migration_assistant.utils import get_workspace_client, logger, get_db_connection
+
 import yaml
 
 from sql_migration_assistant.utils.runindatabricks import current_folder
@@ -29,11 +34,39 @@ EMBEDDING_ENDPOINT = os.environ.get("EMBEDDING_ENDPOINT")
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 
+
 class Config:
     config: dict = {}
 
     def __init__(self):
         self.from_yaml()
+        self.w = get_workspace_client(self.config.get("DATABRICKS_PROFILE", "default"))
+        self.catalog = self.config.get("CATALOG")
+        self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
+        self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME', 'sql_migration_assistant_configs')}"
+        self.validate_first_setup()
+        self.con = get_db_connection(self.config.get("DATABRICKS_PROFILE", "default"), self.warehouse.id)
+        self.from_sql()
+
+    def from_sql(self):
+        try:
+            self.w.tables.get(self.config_table)
+            exists = True
+        except NotFound:
+            exists = False
+
+        if not exists:
+            logger.warning(f"No Config table found at {self.config_table}. Creating new one")
+            cursor = self.con.cursor()
+            cursor.execute(f"Create table {self.config_table} (key STRING, value STRING);")
+            insert_query = f"""Insert into {self.config_table} values {",".join([f"('{key}', '{value}')" for key, value in self.config.items()])};"""
+            cursor.execute(insert_query)
+            cursor.close()
+        else:
+            config = pd.read_sql(f"Select key, value from {self.config_table}", con=self.con)
+            for _, row in config.iterrows():
+                self.config[row["key"]] = row["value"]
+
 
     def from_yaml(self):
         with open(yaml_path, "r") as f:
@@ -41,13 +74,55 @@ class Config:
         self.config = {**self.config, **content}
 
     def set_config(self, key, value):
+        logger.info(f"Setting Config {key} to {value}")
+        cursor = self.con.cursor()
+        insert_query = f"""Insert into {self.config_table} REPLACE WHERE key = '{key}' VALUES ('{key}', '{value}');"""
+        cursor.execute(insert_query)
+        cursor.close()
         self.config[key] = value
-
-    def to_yaml(self):
-        with open(yaml_path, "w") as f:
-            yaml.safe_dump(self.config, f)
 
     def get(self, key):
         return self.config.get(key, "")
+
+    def validate_key_exists(self, key) -> list[str]:
+        if key not in self.config:
+            return [f"{key} not found in config.yml, please configure it before deployment"]
+        return []
+
+    def validate_first_setup(self):
+        """Validate the initial configuration"""
+        errors = []
+        for k in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME", "DEPLOYMENT_MODE"]:
+            errors.extend(self.validate_key_exists(k))
+
+        if self.config.get("DEPLOYMENT_MODE") == "app":
+            errors.extend(self.validate_key_exists("APP_NAME"))
+
+        try:
+            self.w.catalogs.get(self.catalog)
+        except NotFound:
+            errors.append(f"Catalog {self.catalog} does not exist. Please create it before deployment")
+        try:
+            self.w.schemas.get(self.schema)
+        except NotFound:
+            errors.append(f"Schema {self.schema} does not exist. Please create it before deployment")
+
+        warehouses = [w for w in self.w.warehouses.list() if w.name == self.config.get("SQL_WAREHOUSE_NAME")]
+        if len(warehouses) == 0:
+            errors.append(f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} found. Please create it before deployment")
+        else:
+            self.warehouse = warehouses[0]
+        if len(errors) > 0:
+            raise Exception(f"Initial Configuration not valid. Please fix the following errors:"
+                            "\n".join(errors))
+        logger.info("Initial Configuration validated")
+
+
+    def initial_setup_done(self) -> bool:
+        """
+        Tests if the app was already initialized.
+        """
+        return len({"EMBEDDING_MODEL_ENDPOINT", "VECTOR_SEARCH_ENDPOINT_NAME", "VOLUME"}.difference(self.config.keys())) == 0
+
 
 config = Config()

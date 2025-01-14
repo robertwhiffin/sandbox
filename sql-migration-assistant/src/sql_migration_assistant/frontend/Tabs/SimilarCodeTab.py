@@ -8,9 +8,8 @@ class SimilarCodeTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Similar Code") as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Similar Code", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 """
             ## Code with a similar intent to yours.

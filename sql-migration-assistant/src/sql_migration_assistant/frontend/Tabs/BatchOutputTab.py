@@ -7,9 +7,8 @@ class BatchOutputTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Execute Job", visible=False) as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Execute Job", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 """ ## Execute Job
     

@@ -22,9 +22,8 @@ class CodeExplanationTab:
         "databricks-mixtral-8x7b-instruct",
     ]
 
-    def __init__(self):
-        with gr.Tab(label="Code Explanation") as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Code Explanation", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 """
                 ## An AI tool to generate the intent of your code.

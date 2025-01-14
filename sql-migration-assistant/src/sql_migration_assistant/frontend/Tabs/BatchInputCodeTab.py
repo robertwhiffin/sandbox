@@ -14,9 +14,8 @@ class BatchInputCodeTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Select code", visible=False) as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Select code", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 f"""## Select a file to test your agents on.   
 

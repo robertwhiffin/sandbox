@@ -25,7 +25,7 @@ from sql_migration_assistant.config import (
     WORKSPACE_LOCATION,
     VOLUME_NAME,
     DATABRICKS_TOKEN,
-    PROMPT_HISTORY_TABLE_NAME, config,
+    PROMPT_HISTORY_TABLE_NAME,
 )
 
 openai_client = OpenAI(

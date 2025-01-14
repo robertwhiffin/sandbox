@@ -18,8 +18,8 @@ class ConfigTab:
         "databricks-mixtral-8x7b-instruct",
     ]
 
-    def __init__(self):
-        with gr.Tab(label="Configuration") as tab:
+    def __init__(self, visible=True):
+        with gr.Tab(label="Configuration", visible=visible) as self.tab:
             self.header = gr.Markdown("Configuration options ")
             catalogs = [c.name for c in self.w.catalogs.list()]
             catalog = gr.Dropdown(
@@ -123,6 +123,7 @@ class ConfigTab:
                 interactive=True,
                 value=config.VS_INDEX_NAME,
             )
+            self.save_config = gr.Button("Save Config")
 
     def get_warehouse_name_by_id(self, warehouse_id):
         try:
