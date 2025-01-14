@@ -6,7 +6,6 @@ from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCo
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
 from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
 from sql_migration_assistant.frontend.Tabs.ConfigTab import ConfigTab
-from sql_migration_assistant.frontend.Tabs.InitialSetupTab import InitialSetupTab
 from sql_migration_assistant.frontend.Tabs.InstructionsTab import InstructionsTab
 from sql_migration_assistant.frontend.Tabs.InteractiveInputCodeTab import (
     InteractiveInputCodeTab,
@@ -36,17 +35,17 @@ class GradioFrontend:
             with gr.Tabs() as self.tabs:
                 self.initialized = config.initial_setup_done()
 
-                self.initial_setup = InitialSetupTab(not self.initialized)
-                self.instructions_tab = InstructionsTab(self.initialized)
+                self.initial_setup = ConfigTab("Initial Setup", not self.initialized)
+                self.instructions_tab = InstructionsTab(False)
 
-                self.interactive_input_code_tab = InteractiveInputCodeTab(self.initialized)
-                self.batch_input_code_tab = BatchInputCodeTab(self.initialized)
-                self.code_explanation_tab = CodeExplanationTab(self.initialized)
-                self.translation_tab = TranslationTab(self.initialized)
-                self.similar_code_tab = SimilarCodeTab(self.initialized)
-                self.batch_output_tab = BatchOutputTab(self.initialized)
-                self.interactive_output_tab = InteractiveOutputTab(self.initialized)
-                self.config_tab = ConfigTab(self.initialized)
+                self.interactive_input_code_tab = InteractiveInputCodeTab(False)
+                self.batch_input_code_tab = BatchInputCodeTab(False)
+                self.code_explanation_tab = CodeExplanationTab(False)
+                self.translation_tab = TranslationTab(False)
+                self.similar_code_tab = SimilarCodeTab(False)
+                self.batch_output_tab = BatchOutputTab(False)
+                self.interactive_output_tab = InteractiveOutputTab(False)
+                self.config_tab = ConfigTab("Configuration", False)
 
 
             def set_initialized():

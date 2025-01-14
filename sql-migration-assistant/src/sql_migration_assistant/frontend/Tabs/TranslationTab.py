@@ -5,6 +5,7 @@ from sql_migration_assistant.frontend.callbacks import (
     prompt_helper,
     get_prompt_details,
 )
+from sql_migration_assistant.frontend.components import get_foundation_model_dropdown
 
 
 class TranslationTab:
@@ -27,6 +28,7 @@ class TranslationTab:
                 you can do so in the *Load / save instructions* section. 
                 """
             )
+            self.foundation_model_dropdown = get_foundation_model_dropdown("TRANSLATION_MODEL_NAME")
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the translation AI Agent.
@@ -120,6 +122,7 @@ class TranslationTab:
                     inputs=[
                         self.translation_system_prompt,
                         self.translation_input_code,
+                        self.foundation_model_dropdown,
                         self.translation_max_tokens,
                         self.translation_temperature,
                     ],

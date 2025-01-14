@@ -7,20 +7,14 @@ from sql_migration_assistant.frontend.callbacks import (
     get_prompt_details,
     prompt_helper,
 )
+from sql_migration_assistant.frontend.components import get_foundation_model_dropdown
 
 
 class CodeExplanationTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    w = WorkspaceClient(profile="demo-east")
 
-    pay_per_token_models = [
-        "databricks-meta-llama-3-1-405b-instruct",
-        "databricks-meta-llama-3-1-70b-instruct",
-        "databricks-dbrx-instruct",
-        "databricks-mixtral-8x7b-instruct",
-    ]
 
     def __init__(self, visible=True):
         with gr.Tab(label="Code Explanation", visible=visible) as self.tab:
@@ -36,18 +30,7 @@ class CodeExplanationTab:
                 you can do so in the *Load / save instructions* section. 
                 """
             )
-            foundation_model_dropdown = gr.Dropdown(
-                choices=[
-                    ("" if e.name not in self.pay_per_token_models else "PPT - ")
-                    + e.name
-                    for e in self.w.serving_endpoints.list()
-                    if e.name
-                ],
-                label="Foundation Endpoint",
-                interactive=True,
-                value=config.get("INTENT_MODEL_NAME"),
-            )
-            foundation_model_dropdown.change(lambda x: config.set_config("INTENT_MODEL_NAME", x if not x.startswith("PPT - ") else x[6:]), inputs=foundation_model_dropdown)
+            self.foundation_model_dropdown = get_foundation_model_dropdown("INTENT_MODEL_NAME")
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the generating the intent of the input code.
@@ -145,6 +128,7 @@ class CodeExplanationTab:
                     inputs=[
                         self.intent_system_prompt,
                         self.intent_input_code,
+                        self.foundation_model_dropdown,
                         self.intent_max_tokens,
                         self.intent_temperature,
                     ],

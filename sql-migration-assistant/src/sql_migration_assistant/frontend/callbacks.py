@@ -49,14 +49,14 @@ def read_code_file(volume_path, file_name):
     return code
 
 
-def llm_intent_wrapper(system_prompt, input_code, max_tokens, temperature):
-    model_name = config.get("INTENT_MODEL_NAME")
+def llm_intent_wrapper(system_prompt, input_code,model_name, max_tokens, temperature):
+    model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
     intent = llm.llm_intent(system_prompt, input_code, model_name, max_tokens, temperature)
     return intent
 
 
-def llm_translate_wrapper(system_prompt, input_code, max_tokens, temperature):
-    model_name = config.get("TRANSLATION_MODEL_NAME")
+def llm_translate_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
+    model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
     translated_code = llm.llm_translate(
         system_prompt, input_code, model_name, max_tokens, temperature
     )
@@ -115,7 +115,7 @@ TRANSLATED_CODE_GOES_HERE
 def write_adhoc_to_workspace(file_name, preview, input_code, explained):
     if len(file_name) == 0:
         raise gr.Error("Please provide a filename")
-    WORKSPACE_LOCATION = config.get("WORKSPACE_LOCATION")
+    WORKSPACE_LOCATION = config.get_workspace_path()
     notebook_path_root = f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{str(datetime.datetime.now().date()).replace(':', '_')}"
     notebook_path = f"{notebook_path_root}/{file_name}"
     content = preview
@@ -171,7 +171,7 @@ def execute_workflow(
             }
         ],
     ]
-    WORKSPACE_LOCATION = config.get("WORKSPACE_LOCATION")
+    WORKSPACE_LOCATION = config.get_workspace_path()
 
     app_config_payload = {
         "VOLUME_NAME_OUTPUT_PATH": config.get("VOLUME_NAME_OUTPUT_PATH"),

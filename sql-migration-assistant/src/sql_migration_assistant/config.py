@@ -31,6 +31,9 @@ class Config:
         self.con = get_db_connection(self.config.get("DATABRICKS_PROFILE", "default"), self.warehouse.id)
         self.from_sql()
 
+    def get_workspace_path(self):
+        return self.config.get("WORKSPACE_PATH", f"/Workspace/Users/{self.w.config.username}/sql_migration_assistant_files")
+
     def from_sql(self):
         try:
             self.w.tables.get(self.config_table)
