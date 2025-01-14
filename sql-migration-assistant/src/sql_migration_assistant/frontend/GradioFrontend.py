@@ -22,6 +22,7 @@ from sql_migration_assistant.frontend.callbacks import (
     exectute_workflow,
     write_adhoc_to_workspace
 )
+from sql_migration_assistant.utils import logger
 
 
 class GradioFrontend:
@@ -47,10 +48,14 @@ class GradioFrontend:
                 self.interactive_output_tab = InteractiveOutputTab(self.initialized)
                 self.config_tab = ConfigTab(self.initialized)
 
-            def set_initialized():
-                self.initialized = True
-                return [gr.update(visible=False), gr.update(visible=True), gr.Tabs(selected=self.instructions_tab.tab.id)]
 
+            def set_initialized():
+                if config.initial_setup_done():
+                    self.initialized = True
+                    return [gr.update(visible=False), gr.update(visible=True), gr.Tabs(selected=self.instructions_tab.tab.id)]
+                return [gr.update(), gr.update(), gr.update()]
+
+            self.app.load(set_initialized, inputs=None, outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs])
             self.initial_setup.save_config.click(set_initialized, inputs=None, outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs])
 
             # Execute workflow when in batch mode

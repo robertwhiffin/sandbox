@@ -46,7 +46,7 @@ class InitialSetupTab:
             )
 
             self.embedding_model_endpoint_dropdown.select(lambda x: config.set_config("EMBEDDING_MODEL_ENDPOINT",x), inputs=self.embedding_model_endpoint_dropdown)
-            self.vector_search_dropdown.select(lambda x: config.set_config("VECTOR_SEARCH_ENDPOINT",x),
+            self.vector_search_dropdown.select(lambda x: config.set_config("VECTOR_SEARCH_ENDPOINT_NAME",x),
                                                           inputs=self.vector_search_dropdown)
             self.volume_dropdown.select(lambda x: config.set_config("VOLUME",x),
                                                           inputs=self.volume_dropdown)
