@@ -4,6 +4,8 @@ from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import write_adhoc_to_workspace
 
 config = get_config()
+
+
 class InteractiveOutputTab:
     header: gr.Markdown
     tab: gr.Tab
@@ -34,9 +36,7 @@ class InteractiveOutputTab:
               """
             # this is ahidden box which will hold the url of the output notebook, which can be passed to the save intent
             # function
-            self.hidden_url_textbox = gr.Textbox(
-                visible=False
-            )
+            self.hidden_url_textbox = gr.Textbox(visible=False)
             with gr.Row():
                 self.produce_preview_button = gr.Button("Produce Preview")
                 with gr.Column():
@@ -47,5 +47,3 @@ class InteractiveOutputTab:
                     )
 
             self.preview = gr.Code(label="Preview", language="python")
-
-

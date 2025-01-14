@@ -28,7 +28,7 @@ similar_code_helper = SimilarCode(
     schema=config.schema,
     code_intent_table_name=config.get("CODE_INTENT_TABLE_NAME"),
     VS_index_name=config.get("VS_INDEX_NAME"),
-    VS_endpoint_name=config.get("VECTOR_SEARCH_ENDPOINT_NAME")
+    VS_endpoint_name=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
 )
 
 
@@ -50,13 +50,17 @@ def read_code_file(volume_path, file_name):
     return code
 
 
-def llm_intent_wrapper(system_prompt, input_code,model_name, max_tokens, temperature):
+def llm_intent_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
     model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    intent = llm.llm_intent(system_prompt, input_code, model_name, max_tokens, temperature)
+    intent = llm.llm_intent(
+        system_prompt, input_code, model_name, max_tokens, temperature
+    )
     return intent
 
 
-def llm_translate_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
+def llm_translate_wrapper(
+    system_prompt, input_code, model_name, max_tokens, temperature
+):
     model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
     translated_code = llm.llm_translate(
         system_prompt, input_code, model_name, max_tokens, temperature
@@ -106,9 +110,8 @@ TRANSLATED_CODE_GOES_HERE
 
 TRANSLATED_CODE_GOES_HERE
         """.strip()
-        preview_code = (
-            template.replace("INTENT_GOES_HERE", explanation)
-            .replace("TRANSLATED_CODE_GOES_HERE", translated_code)
+        preview_code = template.replace("INTENT_GOES_HERE", explanation).replace(
+            "TRANSLATED_CODE_GOES_HERE", translated_code
         )
         return preview_code
 
@@ -181,12 +184,10 @@ def execute_workflow(
         "CATALOG": config.get("CATALOG"),
         "SCHEMA": config.get("SCHEMA"),
         "DATABRICKS_HOST": w.config.host,
-        "DATABRICKS_TOKEN_SECRET_SCOPE": config.get(
-            "DATABRICKS_TOKEN_SECRET_SCOPE"
-        ),
+        "DATABRICKS_TOKEN_SECRET_SCOPE": config.get("DATABRICKS_TOKEN_SECRET_SCOPE"),
         "DATABRICKS_TOKEN_SECRET_KEY": config.get("DATABRICKS_TOKEN_SECRET_KEY"),
         "CODE_INTENT_TABLE_NAME": config.get("CODE_INTENT_TABLE_NAME"),
-        "VS_INDEX_NAME":config.get("VS_INDEX_NAME"),
+        "VS_INDEX_NAME": config.get("VS_INDEX_NAME"),
         "WORKSPACE_LOCATION": WORKSPACE_LOCATION,
     }
 

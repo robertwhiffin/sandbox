@@ -1,4 +1,3 @@
-
 import os
 import sys
 
@@ -10,13 +9,15 @@ os.chdir(module_dir)
 sys.path.append(module_dir)
 print(module_dir)
 
+
 def main():
     from sql_migration_assistant.frontend.GradioFrontend import GradioFrontend
+
     frontend = GradioFrontend()
     frontend.app.launch(
         server_name=os.getenv("GRADIO_SERVER_NAME", "localhost"),
         server_port=int(os.getenv("GRADIO_SERVER_PORT", 3001)),
-        debug=True
+        debug=True,
     )
 
 

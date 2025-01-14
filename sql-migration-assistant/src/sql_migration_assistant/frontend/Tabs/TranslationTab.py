@@ -28,7 +28,9 @@ class TranslationTab:
                 you can do so in the *Load / save instructions* section. 
                 """
             )
-            self.foundation_model_dropdown = get_foundation_model_dropdown("TRANSLATION_MODEL_NAME")
+            self.foundation_model_dropdown = get_foundation_model_dropdown(
+                "TRANSLATION_MODEL_NAME"
+            )
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the translation AI Agent.
@@ -51,11 +53,13 @@ class TranslationTab:
                 )
                 with gr.Row():
                     self.save_translation_prompt = gr.Button("Save Agent Configuration")
-                    self.load_translation_prompt = gr.Button("Retrieve Saved Configurations")
+                    self.load_translation_prompt = gr.Button(
+                        "Retrieve Saved Configurations"
+                    )
                 # hidden button and display box for saved prompts, made visible when the load button is clicked
                 self.loading_instructions = gr.Markdown(
-                    "To load a saved configuration, enter the ID value in the *ID to load* box and click the *Load Agent Configuration Button*."
-                    ,visible=False
+                    "To load a saved configuration, enter the ID value in the *ID to load* box and click the *Load Agent Configuration Button*.",
+                    visible=False,
                 )
                 with gr.Row():
                     self.translation_prompt_id_to_load = gr.Textbox(
@@ -82,16 +86,15 @@ class TranslationTab:
                     wrap=True,
                 )
 
-
-            #with gr.Accordion(label="Translation Pane", open=True):
+            # with gr.Accordion(label="Translation Pane", open=True):
             gr.Markdown(""" ## AI Code Translation.""")
             # a button labelled translate
             self.translation_system_prompt = gr.Textbox(
                 label="Instructions for the LLM translation tool.",
                 placeholder="Add your system prompt here, for example:\n"
                 "Your job is to help move code from SQL-Server to Databricks. You are an expert in Spark, Delta Lake, "
-                            "and SQL Server. You return valid code - do not prefix your code with backticks or an "
-                            "English introduction.",
+                "and SQL Server. You return valid code - do not prefix your code with backticks or an "
+                "English introduction.",
                 lines=3,
             )
             self.translate_button = gr.Button("Translate")
@@ -110,9 +113,7 @@ class TranslationTab:
                     gr.Markdown(""" ## Translated Code""")
                     # output box of the T-SQL translated to Spark SQL
                     self.translated = gr.Code(
-                        label="AI Agent output",
-                        language="sql-sparkSQL",
-                        lines=4
+                        label="AI Agent output", language="sql-sparkSQL", lines=4
                     )
 
                 # reset hidden chat history and prompt
@@ -140,9 +141,13 @@ class TranslationTab:
                 # make the input box for the prompt id visible
 
                 self.load_translation_prompt.click(
-                    fn=lambda: [gr.update(visible=True)]*3,
+                    fn=lambda: [gr.update(visible=True)] * 3,
                     inputs=None,
-                    outputs=[self.translation_prompt_id_to_load, self.loading_instructions, self.load_translation_agent_config],
+                    outputs=[
+                        self.translation_prompt_id_to_load,
+                        self.loading_instructions,
+                        self.load_translation_agent_config,
+                    ],
                 )
                 # retrieve the row from the table and populate the system prompt, temperature, and max tokens
                 self.translation_prompt_id_to_load.change(

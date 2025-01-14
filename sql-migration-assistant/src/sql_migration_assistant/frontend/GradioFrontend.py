@@ -19,16 +19,19 @@ from sql_migration_assistant.frontend.callbacks import (
     read_code_file,
     produce_preview,
     execute_workflow,
-    write_adhoc_to_workspace
+    write_adhoc_to_workspace,
 )
 from sql_migration_assistant.utils import logger
+
 config = get_config()
+
 
 class GradioFrontend:
     intro = """<img align="right" src="https://asset.brandfetch.io/idSUrLOWbH/idm22kWNaH.png" alt="logo" width="120">
 
 # Databricks Legion Migration Accelerator
 """
+
     def __init__(self):
         with gr.Blocks(theme=gr.themes.Soft()) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
@@ -47,15 +50,26 @@ class GradioFrontend:
                 self.interactive_output_tab = InteractiveOutputTab(False)
                 self.config_tab = ConfigTab("Configuration", False)
 
-
             def set_initialized():
                 if config.initial_setup_done():
                     self.initialized = True
-                    return [gr.update(visible=False), gr.update(visible=True), gr.Tabs(selected=self.instructions_tab.tab.id)]
+                    return [
+                        gr.update(visible=False),
+                        gr.update(visible=True),
+                        gr.Tabs(selected=self.instructions_tab.tab.id),
+                    ]
                 return [gr.update(), gr.update(), gr.update()]
 
-            self.app.load(set_initialized, inputs=None, outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs])
-            self.initial_setup.save_config.click(set_initialized, inputs=None, outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs])
+            self.app.load(
+                set_initialized,
+                inputs=None,
+                outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
+            )
+            self.initial_setup.save_config.click(
+                set_initialized,
+                inputs=None,
+                outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
+            )
 
             # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(
@@ -77,7 +91,7 @@ class GradioFrontend:
                 inputs=[
                     self.code_explanation_tab.explained,
                     self.translation_tab.translated,
-                    self.similar_code_tab.similar_code_notebook_url
+                    self.similar_code_tab.similar_code_notebook_url,
                 ],
                 outputs=self.interactive_output_tab.preview,
             )
@@ -93,7 +107,6 @@ class GradioFrontend:
                 ],
                 outputs=self.interactive_output_tab.adhoc_write_output,
             )
-
 
         # collect all the input and output objects into a list to make it simpler to update them
         self.code_input_objects = [
@@ -150,7 +163,11 @@ class GradioFrontend:
                 self.instructions_tab.operation,
                 tab.tab,
             )
-        for tab in [self.interactive_input_code_tab, self.interactive_output_tab, self.similar_code_tab]:
+        for tab in [
+            self.interactive_input_code_tab,
+            self.interactive_output_tab,
+            self.similar_code_tab,
+        ]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x == "Interactive mode"))),
                 self.instructions_tab.operation,

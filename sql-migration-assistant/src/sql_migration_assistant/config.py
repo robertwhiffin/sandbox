@@ -4,28 +4,31 @@ from pathlib import Path
 import pandas as pd
 from databricks.sdk.errors import NotFound
 
-from sql_migration_assistant.utils import get_workspace_client, logger, get_db_connection
+from sql_migration_assistant.utils import (
+    get_workspace_client,
+    logger,
+    get_db_connection,
+)
 
 import yaml
-
 
 
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 
-
 class Config:
     config: dict = {
         "PROMPT_TABLE": "sql_migration_assistant_prompts",
-        'CONFIG_TABLE_NAME': 'sql_migration_assistant_configs',
+        "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
         "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
     }
 
-
-    def __init__(self, profile = None):
+    def __init__(self, profile=None):
         self.from_environ()
-        self.profile = os.environ.get("DATABRICKS_PROFILE") if profile is None else profile
+        self.profile = (
+            os.environ.get("DATABRICKS_PROFILE") if profile is None else profile
+        )
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
         self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
@@ -35,7 +38,10 @@ class Config:
         self.from_sql()
 
     def get_workspace_path(self):
-        return self.config.get("WORKSPACE_PATH", f"/Workspace/Users/{self.w.config.username}/sql_migration_assistant_files")
+        return self.config.get(
+            "WORKSPACE_PATH",
+            f"/Workspace/Users/{self.w.config.username}/sql_migration_assistant_files",
+        )
 
     def from_sql(self):
         try:
@@ -45,14 +51,20 @@ class Config:
             exists = False
 
         if not exists:
-            logger.warning(f"No Config table found at {self.config_table}. Creating new one")
+            logger.warning(
+                f"No Config table found at {self.config_table}. Creating new one"
+            )
             cursor = self.con.cursor()
-            cursor.execute(f"Create table {self.config_table} (key STRING, value STRING);")
+            cursor.execute(
+                f"Create table {self.config_table} (key STRING, value STRING);"
+            )
             insert_query = f"""Insert into {self.config_table} values {",".join([f"('{key}', '{value}')" for key, value in self.config.items()])};"""
             cursor.execute(insert_query)
             cursor.close()
         else:
-            config = pd.read_sql(f"Select key, value from {self.config_table}", con=self.con)
+            config = pd.read_sql(
+                f"Select key, value from {self.config_table}", con=self.con
+            )
             for _, row in config.iterrows():
                 self.config[row["key"]] = row["value"]
 
@@ -78,7 +90,9 @@ class Config:
 
     def validate_key_exists(self, key) -> list[str]:
         if key not in self.config:
-            return [f"{key} not found in config.yml, please configure it before deployment"]
+            return [
+                f"{key} not found in config.yml, please configure it before deployment"
+            ]
         return []
 
     def validate_first_setup(self):
@@ -93,31 +107,52 @@ class Config:
         try:
             self.w.catalogs.get(self.catalog)
         except NotFound:
-            errors.append(f"Catalog {self.catalog} does not exist. Please create it before deployment")
+            errors.append(
+                f"Catalog {self.catalog} does not exist. Please create it before deployment"
+            )
         try:
             self.w.schemas.get(self.schema)
         except NotFound:
-            errors.append(f"Schema {self.schema} does not exist. Please create it before deployment")
+            errors.append(
+                f"Schema {self.schema} does not exist. Please create it before deployment"
+            )
 
-        warehouses = [w for w in self.w.warehouses.list() if w.name == self.config.get("SQL_WAREHOUSE_NAME")]
+        warehouses = [
+            w
+            for w in self.w.warehouses.list()
+            if w.name == self.config.get("SQL_WAREHOUSE_NAME")
+        ]
         if len(warehouses) == 0:
-            errors.append(f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} found. Please create it before deployment")
+            errors.append(
+                f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} found. Please create it before deployment"
+            )
         else:
             self.warehouse = warehouses[0]
         if len(errors) > 0:
-            raise Exception(f"Initial Configuration not valid. Please fix the following errors:"
-                            "\n".join(errors))
+            raise Exception(
+                f"Initial Configuration not valid. Please fix the following errors:"
+                "\n".join(errors)
+            )
         logger.info("Initial Configuration validated")
-
 
     def initial_setup_done(self) -> bool:
         """
         Tests if the app was already initialized.
         """
-        return len({"EMBEDDING_MODEL_ENDPOINT", "VECTOR_SEARCH_ENDPOINT_NAME", "VOLUME"}.difference(self.config.keys())) == 0
+        return (
+            len(
+                {
+                    "EMBEDDING_MODEL_ENDPOINT",
+                    "VECTOR_SEARCH_ENDPOINT_NAME",
+                    "VOLUME",
+                }.difference(self.config.keys())
+            )
+            == 0
+        )
 
 
 config = None
+
 
 def get_config(profile=None):
     global config

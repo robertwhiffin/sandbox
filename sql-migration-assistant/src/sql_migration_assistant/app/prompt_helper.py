@@ -5,6 +5,7 @@ from sql_migration_assistant.config import get_config
 
 config = get_config()
 
+
 class PromptHelper:
     def __init__(self, schema, prompt_table):
         self.SCHEMA = schema
@@ -20,8 +21,9 @@ class PromptHelper:
             f"       agentConfigs.{agent}.max_tokens as token_limit,"
             f"       loadDatetime as save_time FROM {self.SCHEMA}.{self.PROMPT_TABLE} "
             f"WHERE map_keys(agentConfigs) = array('{agent}') "
-            f"ORDER BY save_time DESC "
-        , con=con)
+            f"ORDER BY save_time DESC ",
+            con=con,
+        )
         return response
 
     def save_prompt(self, agent, prompt, temperature, token_limit):
