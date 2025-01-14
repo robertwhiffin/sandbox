@@ -1,8 +1,9 @@
 import gradio as gr
 import pandas as pd
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 
+config = get_config()
 
 class PromptHelper:
     def __init__(self, schema, prompt_table):

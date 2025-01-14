@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -21,14 +22,16 @@ class Config:
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
     }
 
-    def __init__(self):
+
+    def __init__(self, profile = None):
         self.from_yaml()
-        self.w = get_workspace_client(self.config.get("DATABRICKS_PROFILE", "default"))
+        self.profile = os.environ.get("DATABRICKS_PROFILE") if profile is None else profile
+        self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
         self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
         self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME')}"
         self.validate_first_setup()
-        self.con = get_db_connection(self.config.get("DATABRICKS_PROFILE", "default"), self.warehouse.id)
+        self.con = get_db_connection(self.profile, self.warehouse.id)
         self.from_sql()
 
     def get_workspace_path(self):
@@ -111,4 +114,9 @@ class Config:
         return len({"EMBEDDING_MODEL_ENDPOINT", "VECTOR_SEARCH_ENDPOINT_NAME", "VOLUME"}.difference(self.config.keys())) == 0
 
 
-config = Config()
+config = None
+
+def get_config(profile=None):
+    global config
+    config = Config(profile) if config is None else config
+    return config

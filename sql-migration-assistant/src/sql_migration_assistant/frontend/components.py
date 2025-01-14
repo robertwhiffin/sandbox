@@ -1,6 +1,8 @@
 import gradio as gr
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
+
+config = get_config()
 
 pay_per_token_models = [
         "databricks-meta-llama-3-1-405b-instruct",

@@ -12,9 +12,10 @@ from openai import OpenAI
 from sql_migration_assistant.app.llm import LLMCalls
 from sql_migration_assistant.app.prompt_helper import PromptHelper
 from sql_migration_assistant.app.similar_code import SimilarCode
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.utils import get_workspace_client
 
+config = get_config()
 w = config.w
 
 llm = LLMCalls(w)

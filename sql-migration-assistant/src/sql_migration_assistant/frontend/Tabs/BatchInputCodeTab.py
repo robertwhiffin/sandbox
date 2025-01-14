@@ -1,8 +1,9 @@
 import gradio as gr
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import list_files
 
+config = get_config()
 
 class BatchInputCodeTab:
     header: gr.Markdown

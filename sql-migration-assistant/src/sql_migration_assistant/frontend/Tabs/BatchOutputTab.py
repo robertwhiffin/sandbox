@@ -1,9 +1,9 @@
 import gradio as gr
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import make_status_box_visible
 
-
+config = get_config()
 class BatchOutputTab:
     header: gr.Markdown
     tab: gr.Tab

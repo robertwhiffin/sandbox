@@ -1,7 +1,7 @@
 import gradio as gr
 from databricks.sdk import WorkspaceClient
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import (
     llm_intent_wrapper,
     get_prompt_details,
@@ -9,6 +9,7 @@ from sql_migration_assistant.frontend.callbacks import (
 )
 from sql_migration_assistant.frontend.components import get_foundation_model_dropdown
 
+config = get_config()
 
 class CodeExplanationTab:
     header: gr.Markdown

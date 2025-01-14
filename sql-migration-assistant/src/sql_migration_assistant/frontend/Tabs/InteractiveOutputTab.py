@@ -1,9 +1,9 @@
 import gradio as gr
 
-from sql_migration_assistant.config import config
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import write_adhoc_to_workspace
 
-
+config = get_config()
 class InteractiveOutputTab:
     header: gr.Markdown
     tab: gr.Tab
