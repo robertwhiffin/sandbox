@@ -1,7 +1,4 @@
-import os
-from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 from databricks.sdk.errors import NotFound
@@ -10,25 +7,6 @@ from sql_migration_assistant.utils import get_workspace_client, logger, get_db_c
 
 import yaml
 
-from sql_migration_assistant.utils.runindatabricks import current_folder
-
-FOUNDATION_MODEL_NAME = os.environ.get("SERVED_FOUNDATION_MODEL_NAME")
-SQL_WAREHOUSE_ID = os.environ.get("DATABRICKS_WAREHOUSE_ID")
-VECTOR_SEARCH_ENDPOINT_NAME = os.environ.get("VECTOR_SEARCH_ENDPOINT_NAME")
-VS_INDEX_NAME = os.environ.get("VS_INDEX_NAME")
-CODE_INTENT_TABLE_NAME = os.environ.get("CODE_INTENT_TABLE_NAME")
-CATALOG = os.environ.get("CATALOG", "sebastian_grunwald")
-SCHEMA = os.environ.get("SCHEMA")
-VOLUME_NAME = os.environ.get("VOLUME_NAME")
-DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
-TRANSFORMATION_JOB_ID = os.environ.get("TRANSFORMATION_JOB_ID")
-WORKSPACE_LOCATION = os.environ.get("WORKSPACE_LOCATION")
-VOLUME_NAME_INPUT_PATH = os.environ.get("VOLUME_NAME_INPUT_PATH")
-PROMPT_HISTORY_TABLE_NAME = os.environ.get("PROMPT_HISTORY_TABLE_NAME")
-DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
-SECRET_KEY = os.environ.get("SECRET_KEY")
-SECRET_SCOPE = os.environ.get("SECRET_SCOPE")
-EMBEDDING_ENDPOINT = os.environ.get("EMBEDDING_ENDPOINT")
 
 
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
@@ -36,14 +14,19 @@ yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 
 class Config:
-    config: dict = {}
+    config: dict = {
+        "PROMPT_TABLE": "sql_migration_assistant_prompts",
+        'CONFIG_TABLE_NAME': 'sql_migration_assistant_configs',
+        "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
+        "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
+    }
 
     def __init__(self):
         self.from_yaml()
         self.w = get_workspace_client(self.config.get("DATABRICKS_PROFILE", "default"))
         self.catalog = self.config.get("CATALOG")
         self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
-        self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME', 'sql_migration_assistant_configs')}"
+        self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME')}"
         self.validate_first_setup()
         self.con = get_db_connection(self.config.get("DATABRICKS_PROFILE", "default"), self.warehouse.id)
         self.from_sql()
@@ -81,8 +64,8 @@ class Config:
         cursor.close()
         self.config[key] = value
 
-    def get(self, key):
-        return self.config.get(key, "")
+    def get(self, key, default=None):
+        return self.config.get(key, default)
 
     def validate_key_exists(self, key) -> list[str]:
         if key not in self.config:

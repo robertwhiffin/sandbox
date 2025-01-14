@@ -141,7 +141,7 @@ class TranslationTab:
                     inputs=None,
                     outputs=[self.translation_prompt_id_to_load, self.loading_instructions, self.load_translation_agent_config],
                 )
-                # retrive the row from the table and populate the system prompt, temperature, and max tokens
+                # retrieve the row from the table and populate the system prompt, temperature, and max tokens
                 self.translation_prompt_id_to_load.change(
                     fn=get_prompt_details,
                     inputs=[

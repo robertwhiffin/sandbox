@@ -12,7 +12,7 @@ class InitialSetupTab:
 
 
     def __init__(self, visible=True):
-        self.w = get_workspace_client(config.get("DATABRICKS_PROFILE"))
+        self.w = config.w
         with gr.Tab(label="Initial Setup", visible=visible) as self.tab:
             self.header = gr.Markdown("## Initial Setup")
             self.embedding_model_endpoint_dropdown = gr.Dropdown(

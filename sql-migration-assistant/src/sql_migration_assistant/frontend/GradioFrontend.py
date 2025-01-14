@@ -19,7 +19,7 @@ from sql_migration_assistant.frontend.Tabs.TranslationTab import TranslationTab
 from sql_migration_assistant.frontend.callbacks import (
     read_code_file,
     produce_preview,
-    exectute_workflow,
+    execute_workflow,
     write_adhoc_to_workspace
 )
 from sql_migration_assistant.utils import logger
@@ -60,7 +60,7 @@ class GradioFrontend:
 
             # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(
-                exectute_workflow,
+                execute_workflow,
                 inputs=[
                     self.code_explanation_tab.intent_system_prompt,
                     self.code_explanation_tab.intent_temperature,

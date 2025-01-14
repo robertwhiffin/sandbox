@@ -2,7 +2,7 @@ import gradio as gr
 from databricks.sdk import WorkspaceClient
 from tomlkit import value
 
-import sql_migration_assistant.config as config
+from sql_migration_assistant.config import config
 
 
 class ConfigTab:
@@ -27,7 +27,7 @@ class ConfigTab:
                 label="Catalog",
                 filterable=True,
                 interactive=True,
-                value=config.CATALOG,
+                value=config.catalog,
             )
 
             def get_schema(catalog_name):
@@ -38,7 +38,7 @@ class ConfigTab:
                 except Exception as e:
                     schemas = ["Please select a valid catalog"]
                 return gr.Dropdown(
-                    schemas, label="Schema", interactive=True, value=config.SCHEMA
+                    schemas, label="Schema", interactive=True, value=config.schema
                 )
 
             schema = get_schema(catalog.value)
@@ -48,7 +48,6 @@ class ConfigTab:
                 choices=[s.name for s in self.w.secrets.list_scopes()],
                 label="Secret scope",
                 interactive=True,
-                value=config.SECRET_SCOPE,
             )
 
             def get_secret_dropdown(secret_scope_name):

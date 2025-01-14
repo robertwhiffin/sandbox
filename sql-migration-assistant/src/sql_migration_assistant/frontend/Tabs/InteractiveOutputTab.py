@@ -1,6 +1,6 @@
 import gradio as gr
 
-from sql_migration_assistant.config import DATABRICKS_HOST, CATALOG, SCHEMA, VOLUME_NAME
+from sql_migration_assistant.config import config
 from sql_migration_assistant.frontend.callbacks import write_adhoc_to_workspace
 
 
@@ -15,7 +15,7 @@ class InteractiveOutputTab:
 
             Write out your explained and translated file to a notebook in the workspace. 
             You must provide a filename for the notebook. The notebook will be written to the workspace, saved to the 
-            Output Code location in the Unity Catalog Volume [here]({DATABRICKS_HOST}/explore/data/volumes/{CATALOG}/{SCHEMA}/{VOLUME_NAME}) 
+            Output Code location in the Unity Catalog Volume [here]({config.w.config.host}/explore/data/volumes/{config.catalog}/{config.get('SCHEMA')}/{config.get('VOLUME')}) 
             , and the intent will be saved to the intent table. 
             """
             )

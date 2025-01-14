@@ -9,20 +9,16 @@ class SimilarCode:
     def __init__(
         self,
         workspace_client: WorkspaceClient,
-        see: StatementExecutionExt,
-        catalog,
         schema,
         code_intent_table_name,
         VS_index_name,
         VS_endpoint_name,
     ):
         self.w = workspace_client
-        self.see = see
-        self.catalog = catalog
         self.schema = schema
         # FQN = Fully Qualified Name
-        self.code_intent_table_FQN = f"{catalog}.{schema}.{code_intent_table_name}"
-        self.vs_index_FQN = f"{catalog}.{schema}.{VS_index_name}"
+        self.code_intent_table_FQN = f"{schema}.{code_intent_table_name}"
+        self.vs_index_FQN = f"{schema}.{VS_index_name}"
         self.vs_endpoint_name = VS_endpoint_name
 
     def save_intent(self, code, intent, url):
