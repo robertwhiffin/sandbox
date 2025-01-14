@@ -69,7 +69,7 @@ def main(profile, project_dir, config_path):
             con = get_db_connection(profile, warehouse.id)
             cursor = con.cursor()
             cursor.execute(
-                f"GRANT ALL PRIVILEGES ON SCHEMA {config.get('CATALOG')}.{config.get('SCHEMA')} TO '{app.service_principal_name}'"
+                f"GRANT ALL PRIVILEGES ON SCHEMA {config.get('CATALOG')}.{config.get('SCHEMA')} TO `{app.service_principal_client_id}`"
             )
             cursor.close()
         except Exception as e:
