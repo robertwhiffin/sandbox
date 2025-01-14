@@ -29,7 +29,7 @@ class TranslationTab:
                 """
             )
             self.foundation_model_dropdown = get_foundation_model_dropdown(
-                "TRANSLATION_MODEL_NAME"
+                "TRANSLATION_MODEL_NAME", self.tab
             )
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(

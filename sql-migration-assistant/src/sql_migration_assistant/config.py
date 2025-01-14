@@ -79,11 +79,15 @@ class Config:
 
     def set_config(self, key, value):
         logger.info(f"Setting Config {key} to {value}")
+        self.set_configs({key: value})
+
+    def set_configs(self, configs: dict):
+        logger.info(f"Setting Configs {configs}")
         cursor = self.con.cursor()
-        insert_query = f"""Insert into {self.config_table} REPLACE WHERE key = '{key}' VALUES ('{key}', '{value}');"""
+        insert_query = f"""Insert into {self.config_table} REPLACE WHERE key in ('{"','".join(configs.keys())}') VALUES {",".join([f"('{key}', '{value}')" for key, value in configs.items()])};"""
         cursor.execute(insert_query)
         cursor.close()
-        self.config[key] = value
+        self.config = {**self.config, **configs}
 
     def get(self, key, default=None):
         return self.config.get(key, default)

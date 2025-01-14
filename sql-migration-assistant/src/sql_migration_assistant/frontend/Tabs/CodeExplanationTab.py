@@ -31,7 +31,7 @@ class CodeExplanationTab:
                 """
             )
             self.foundation_model_dropdown = get_foundation_model_dropdown(
-                "INTENT_MODEL_NAME"
+                "INTENT_MODEL_NAME", self.tab
             )
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(

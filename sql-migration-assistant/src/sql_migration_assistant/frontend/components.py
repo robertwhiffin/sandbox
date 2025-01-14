@@ -12,7 +12,7 @@ pay_per_token_models = [
 ]
 
 
-def get_foundation_model_dropdown(model_name):
+def get_foundation_model_dropdown(model_name, tab):
     foundation_model_dropdown = gr.Dropdown(
         choices=[
             ("" if e.name not in pay_per_token_models else "PPT - ") + e.name
@@ -29,4 +29,10 @@ def get_foundation_model_dropdown(model_name):
         ),
         inputs=foundation_model_dropdown,
     )
+    tab.select(lambda:
+                    gr.update(choices=[
+            ("" if e.name not in pay_per_token_models else "PPT - ") + e.name
+            for e in config.w.serving_endpoints.list()
+            if e.name
+        ]), outputs=foundation_model_dropdown)
     return foundation_model_dropdown
