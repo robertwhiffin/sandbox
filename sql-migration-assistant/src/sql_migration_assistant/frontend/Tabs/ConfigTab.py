@@ -12,7 +12,7 @@ class ConfigTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self, title: str, visible=True):
+    def __init__(self, title: str, initialized: gr.Radio, visible=True):
         self.w = config.w
         with gr.Tab(label=title, visible=visible) as self.tab:
             self.header = gr.Markdown(f"## {title}")
@@ -74,6 +74,19 @@ class ConfigTab:
                                     "PROMPT_TABLE": y,
                                     "VS_INDEX_NAME": z
                                     })
+                if a and b and c:
+                    return gr.update(value=True)
+                return gr.update()
+            self.save_config.click(set_configs,
+                                   inputs=[
+                                       self.embedding_model_endpoint_dropdown,
+                                       self.vector_search_dropdown,
+                                       self.volume_dropdown,
+                                       self.intent_tabel_name_box,
+                                       self.prompt_tabel_name_box,
+                                       self.vector_search_index_box,
+                                   ],
+                                   outputs=initialized)
             self.tab.select(
                 lambda: [
                     gr.update(value=config.get("EMBEDDING_MODEL_ENDPOINT"), choices=[

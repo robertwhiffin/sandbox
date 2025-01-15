@@ -35,10 +35,9 @@ class GradioFrontend:
     def __init__(self):
         with gr.Blocks(theme=gr.themes.Soft()) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
+            self.initialized = gr.Radio(choices=[True, False], value=config.initial_setup_done(), visible=False)
             with gr.Tabs() as self.tabs:
-                self.initialized = config.initial_setup_done()
-
-                self.initial_setup = ConfigTab("Initial Setup", not self.initialized)
+                self.initial_setup = ConfigTab("Initial Setup", self.initialized, not self.initialized.value)
                 self.instructions_tab = InstructionsTab(False)
 
                 self.interactive_input_code_tab = InteractiveInputCodeTab(False)
@@ -48,10 +47,10 @@ class GradioFrontend:
                 self.similar_code_tab = SimilarCodeTab(False)
                 self.batch_output_tab = BatchOutputTab(False)
                 self.interactive_output_tab = InteractiveOutputTab(False)
-                self.config_tab = ConfigTab("Configuration", False)
+                self.config_tab = ConfigTab("Configuration", self.initialized, False)
 
-            def set_initialized(initial: bool=True):
-                if config.initial_setup_done() and initial:
+            def set_initialized():
+                if config.initial_setup_done():
                     self.initialized = True
                     return [
                         gr.update(visible=False),
@@ -60,47 +59,13 @@ class GradioFrontend:
                     ]
                 return [gr.update(), gr.update(), gr.update()]
 
-            def save_config(initial):
-                def inner(a, b, c, x, y, z):
-                    config.set_configs({"EMBEDDING_MODEL_ENDPOINT": a,
-                                        "VECTOR_SEARCH_ENDPOINT_NAME": b,
-                                        "VOLUME": c,
-                                        "CODE_INTENT_TABLE_NAME": x,
-                                        "PROMPT_TABLE": y,
-                                        "VS_INDEX_NAME": z
-                                        })
-                    return set_initialized(initial)
-                return inner
-
             self.app.load(
                 set_initialized,
                 inputs=None,
                 outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
             )
-            self.initial_setup.save_config.click(
-                save_config(True),
-                show_progress="full",
-                inputs=[
-                    self.initial_setup.embedding_model_endpoint_dropdown,
-                    self.initial_setup.vector_search_dropdown,
-                    self.initial_setup.volume_dropdown,
-                    self.initial_setup.intent_tabel_name_box,
-                    self.initial_setup.prompt_tabel_name_box,
-                    self.initial_setup.vector_search_index_box,
-                ],
-                outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
-            )
-            self.config_tab.save_config.click(
-                save_config(False),
-                show_progress="full",
-                inputs=[
-                    self.initial_setup.embedding_model_endpoint_dropdown,
-                    self.initial_setup.vector_search_dropdown,
-                    self.initial_setup.volume_dropdown,
-                    self.initial_setup.intent_tabel_name_box,
-                    self.initial_setup.prompt_tabel_name_box,
-                    self.initial_setup.vector_search_index_box,
-                ],
+            self.initialized.change(
+                set_initialized,
                 outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
             )
 
