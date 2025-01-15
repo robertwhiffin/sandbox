@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 import yaml
 from databricks.sdk import WorkspaceClient
@@ -128,13 +129,14 @@ if __name__ == "__main__":
         "--profile", type=str, required=False, help="The profile name to use.", default=None
     )
     parser.add_argument(
-        "--project-dir", type=str, required=True, help="The project directory."
+        "--project-dir", type=str, required=False, help="The project directory.", default=os.getcwd()
     )
     parser.add_argument(
         "--config-path",
         type=str,
-        required=True,
+        required=False,
         help="The path to the configuration file.",
+        default=Path(os.getcwd(), "config.yml"),
     )
 
     # Parse the arguments

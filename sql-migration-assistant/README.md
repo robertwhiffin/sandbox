@@ -48,6 +48,10 @@ To get started copy config_template.yml as config.yml and fill out the needed va
 ### 3. Run deployment command
 Run the command 
 ```bash
+python deploy.py 
+```
+If you want to use non-default values you can also use 
+```bash
 python deploy.py --profile <your-databricks-profile> --project-dir <path-to-project-root> --config-path <path-to-config-yml>
 ```
 This will deploy the app and create all needed resources with it.
