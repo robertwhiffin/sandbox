@@ -24,6 +24,7 @@ def main(profile, project_dir, config_path):
     - project_dir (str): The directory of the project.
     - config_path (str): The path to the configuration file.
     """
+    check_profile(profile)
     project_dir_resolved = os.path.realpath(project_dir)
     config_path_resolved = os.path.realpath(config_path)
     print(f"Profile: {profile}")
@@ -109,6 +110,13 @@ def create_app_yml(config):
     with open("app.yml", "w") as file:
         yaml.dump(content, file)
 
+def check_profile(profile):
+    if profile is None:
+        print("Profile not specified, defaulting to DEFAULT")
+    try:
+        WorkspaceClient(profile=profile)
+    except ValueError:
+        raise Exception("The databricks cli is not configured yet. Please run 'databricks configure'")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -117,7 +125,7 @@ if __name__ == "__main__":
 
     # Adding arguments
     parser.add_argument(
-        "--profile", type=str, required=True, help="The profile name to use."
+        "--profile", type=str, required=False, help="The profile name to use.", default=None
     )
     parser.add_argument(
         "--project-dir", type=str, required=True, help="The project directory."
