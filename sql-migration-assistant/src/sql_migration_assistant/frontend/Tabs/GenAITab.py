@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from enum import Enum
+from random import choices
 
 import gradio as gr
 
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import (
     llm_wrapper,
-    get_prompt_details,
-    prompt_helper,
+    get_prompt_details, save_instruction, load_instructions,
 )
 from sql_migration_assistant.frontend.components import get_foundation_model_dropdown
 
@@ -27,7 +27,6 @@ class Parameters:
     prompt_lines: int
     button_title: str
     result_header: str
-    model_name: str
 
 PARAMETERS = {
     Purpose.EXPLAIN: Parameters(
@@ -51,8 +50,7 @@ PARAMETERS = {
                             ", not a line by line breakdown.\n",
         prompt_lines=4,
         button_title="Explain",
-        result_header=""" ## Code Explanation.""",
-        model_name="INTENT_MODEL_NAME"
+        result_header=""" ## Code Explanation."""
     ),
 Purpose.TRANSLATE: Parameters(
         title="Code Translation",
@@ -76,8 +74,7 @@ Purpose.TRANSLATE: Parameters(
                 "English introduction.",
         prompt_lines=3,
         button_title="Translate",
-        result_header=""" ## Translated Code""",
-        model_name="TRANSLATION_MODEL_NAME"
+        result_header=""" ## Translated Code"""
     )
 }
 
@@ -92,10 +89,16 @@ class GenAITab:
             self.header = gr.Markdown(
                 params.header,
             )
-            self.foundation_model_dropdown = get_foundation_model_dropdown(
-                "INTENT_MODEL_NAME", self.tab
-            )
-            with gr.Accordion(label="Advanced Settings", open=False):
+            with gr.Column(elem_classes="custom-container"):
+
+                gr.Markdown("""
+                ## Agent Configuration
+                You can configure the AI here. These consist of a LLM you want to use and instructions you give to this LLM.
+                You can also save/load instructions.
+                """)
+                self.foundation_model_dropdown = get_foundation_model_dropdown(
+                    self.tab
+                )
                 gr.Markdown(
                     """ ### Advanced settings for model.
 
@@ -103,60 +106,34 @@ class GenAITab:
                     more creative responses, while lower values will result in more predictable responses.
                     """
                 )
+                with gr.Accordion(label="Advanced settings for model.", open=False):
+                    with gr.Row():
+                        self.temperature = gr.Number(
+                            label="Temperature. Float between 0.0 and 1.0", value=0.0
+                        )
+                        self.max_tokens = gr.Number(
+                            label="Max tokens. Check your LLM docs for limit.", value=3500
+                        )
 
-                with gr.Row():
-                    self.temperature = gr.Number(
-                        label="Temperature. Float between 0.0 and 1.0", value=0.0
-                    )
-                    self.max_tokens = gr.Number(
-                        label="Max tokens. Check your LLM docs for limit.", value=3500
-                    )
+                self.system_prompt = gr.Textbox(
+                    label=params.prompt_label,
+                    placeholder=params.prompt_placeholder,
+                    lines=params.prompt_lines,
+                )
+                with gr.Accordion(label="Save and load Agent Configuration", open=False):
+                    with gr.Row():
+                        self.instruction_name = gr.Textbox(max_lines=1,
+                                                           placeholder="Please fill in a name to save your instructions",
+                                                           label="Configuration Name")
+                        self.save_instructions = gr.Button("Save Agent Configuration")
+                    with gr.Row():
+                        self.instructions_dropdown = gr.Dropdown(label="Existing Agent Configurations", choices=load_instructions(purpose.value)["name"].to_list(), value=None)
+                        self.load_instructions = gr.Button("Load Agent Configurations")
 
-            with gr.Accordion(label="Load / save instructions", open=False):
-                gr.Markdown(
-                    """ ### Load a previously saved prompt.
-                    """
-                )
-                # these bits relate to saving and loading of prompts
-                with gr.Row():
-                    self.save_instructions = gr.Button("Save Agent Configuration")
-                    self.load_instructions = gr.Button("Retrieve Saved Configurations")
-                # hidden button and display box for saved prompts, made visible when the load button is clicked
-                self.loading_instructions = gr.Markdown(
-                    "To load a saved configuration, enter the ID value in the *ID to load* box and click the *Load Agent Configuration Button*.",
-                    visible=False,
-                )
-                with gr.Row():
-                    self.prompt_id_to_load = gr.Textbox(
-                        label="ID to load",
-                        visible=False,
-                        placeholder="Enter the ID of the configuration to load from the table below.",
-                    )
-                    self.load_agent_config = gr.Button(
-                        "Load Agent Configuration",
-                        visible=False,
-                    )
-                self.loaded_instructions = gr.Dataframe(
-                    label="Saved prompts.",
-                    visible=False,
-                    headers=[
-                        "id",
-                        "Prompt",
-                        "Temperature",
-                        "Max Tokens",
-                        "Save Datetime",
-                    ],
-                    interactive=False,
-                    wrap=True,
-                )
 
             # with gr.Accordion(label="Intent Pane", open=True):
             gr.Markdown(params.prompt_title)
-            self.system_prompt = gr.Textbox(
-                label=params.prompt_label,
-                placeholder=params.prompt_placeholder,
-                lines=params.prompt_lines,
-            )
+
             self.explain_button = gr.Button(params.button_title)
             with gr.Row():
                 with gr.Column():
@@ -181,60 +158,48 @@ class GenAITab:
                             label="AI Agent output", language="sql-sparkSQL", lines=4
                         )
 
-                # reset hidden chat history and prompt
-                # do translation
-                self.explain_button.click(
-                    fn=llm_wrapper,
-                    inputs=[
-                        self.system_prompt,
-                        self.input_code,
-                        self.foundation_model_dropdown,
-                        self.max_tokens,
-                        self.temperature,
-                    ],
-                    outputs=self.output,
-                )
-                # get the prompts and populate the table and make it visible
-                #self.load_prompt.click(
-                #    fn=lambda: gr.update(
-                #        visible=True,
-                #        value=prompt_helper.get_prompts("intent_agent"),
-                #    ),
-                #   inputs=None,
-                #    outputs=[self.loaded_intent_prompts],
-                #)
-                # make the input box for the prompt id visible
-                self.load_instructions.click(
-                    fn=lambda: [gr.update(visible=True)] * 3,
-                    inputs=None,
-                    outputs=[
-                        self.prompt_id_to_load,
-                        self.load_agent_config,
-                        self.loading_instructions,
-                    ],
-                )
+        # reset hidden chat history and prompt
+        # do translation
+        self.explain_button.click(
+            fn=llm_wrapper,
+            inputs=[
+                self.system_prompt,
+                self.input_code,
+                self.foundation_model_dropdown,
+                self.max_tokens,
+                self.temperature,
+            ],
+            outputs=self.output,
+        )
 
-                self.load_agent_config.click(
-                    fn=get_prompt_details,
-                    inputs=[
-                        self.prompt_id_to_load,
-                        self.loaded_instructions,
-                    ],
-                    outputs=[
-                        self.system_prompt,
-                        self.temperature,
-                        self.max_tokens,
-                    ],
-                )
-                # save the prompt
-                # self.save_prompt.click(
-                #     fn=lambda prompt, temp, tokens: prompt_helper.save_prompt(
-                #         "intent_agent", prompt, temp, tokens
-                #     ),
-                #     inputs=[
-                #         self.intent_system_prompt,
-                #         self.intent_temperature,
-                #         self.intent_max_tokens,
-                #     ],
-                #     outputs=None,
-                # )
+        def save_instructions_wrapper(*args):
+            save_instruction(*args, instruction_type=purpose.value)
+            return gr.update(choices=load_instructions(purpose.value)["name"].to_list())
+
+        self.save_instructions.click(save_instructions_wrapper,
+                                     inputs=[self.instruction_name,
+                                             self.foundation_model_dropdown,
+                                             self.temperature,
+                                             self.max_tokens,
+                                             self.system_prompt],
+                                     outputs=self.instructions_dropdown,
+                                     )
+
+        def load_single_instruction( name: str):
+            instruction = load_instructions(purpose.value, name).iloc[0]
+            return [
+                gr.update(value=instruction["name"]),
+                gr.update(value=instruction["endpoint"]),
+                gr.update(value=int(instruction["max_tokens"])),
+                gr.update(value=float(instruction["temperature"])),
+                gr.update(value=instruction["system_prompt"]),
+            ]
+        self.load_instructions.click(load_single_instruction,
+                                     inputs=[self.instructions_dropdown],
+                                     outputs=[self.instruction_name,
+                                              self.foundation_model_dropdown,
+                                              self.max_tokens,
+                                              self.temperature,
+                                              self.system_prompt])
+
+

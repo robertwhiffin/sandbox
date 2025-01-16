@@ -28,7 +28,7 @@ def construct_upsert_query(table: str, values: list[dict[str, Any]], keys: list[
         raise ValueError("Keys need to be specified for upserting")
     where_clause = " and ".join([f"""{key} in  ('{"','".join(set([v[key] for v in values]))}')""" for key in keys])
     logger.debug(f"Upserting, where clause: {where_clause}")
-    values_clause = ",".join([f"""('{"','".join([row[c] for c in columns])}')""" for row in values])
+    values_clause = ",".join([f"""('{"','".join([str(row[c]) for c in columns])}')""" for row in values])
     logger.debug(f"Upserting, value clause: {values_clause}")
     query = f"INSERT INTO {config.schema}.{table} REPLACE WHERE {where_clause} VALUES {values_clause}"
     logger.debug(f"Upserting, query: {query}")
@@ -78,7 +78,7 @@ def create_table(table: str, schema: str, config=None):
 
 @ensure_config
 def create_if_not_exists(table: str, schema: str, config=None):
-    if not table_exists(table, config):
+    if not table_exists(table, config=config):
         logger.info(f"Table {table} does not exist")
         create_table(table, schema, config=config)
 
