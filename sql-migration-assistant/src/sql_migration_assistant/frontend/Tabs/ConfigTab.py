@@ -83,7 +83,8 @@ class ConfigTab:
                                        self.prompt_tabel_name_box,
                                        self.vector_search_index_box,
                                    ],
-                                   outputs=initialized)
+                                   outputs=initialized,
+                                   show_progress="full")
             self.tab.select(
                 lambda: [
                     gr.update(value=config.get("EMBEDDING_MODEL_ENDPOINT"), choices=[

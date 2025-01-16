@@ -2,8 +2,10 @@ from typing import Any
 
 import pandas as pd
 from databricks import sql
-from databricks.sdk.config import logger, Config
+from databricks.sdk.config import Config
 from databricks.sdk.errors import NotFound
+
+from sql_migration_assistant.utils import logger
 
 
 def ensure_config(func):
@@ -44,6 +46,7 @@ def execute_query(query: str, config=None):
     cur = config.con.cursor()
     try:
         cur.execute(query)
+        logger.info(f"Executed query: {query}")
     except Exception as e:
         logger.error(f"Execution of query failed: {query} with error: {e}")
     cur.close()
@@ -56,10 +59,10 @@ def insert(table: str, values: list[dict[str, Any]], config=None, keys: list[str
         # check if all columns are present
         if  set(columns) != set(values[0].keys()):
             raise ValueError("All columns need to be specified for upserting")
-        query = construct_upsert_query(table, values, keys, columns, config)
+        query = construct_upsert_query(table, values, keys, columns, config=config)
     else:
-        query = construct_insert_query(table, values, config)
-    execute_query(query, config)
+        query = construct_insert_query(table, values, config, config=config)
+    execute_query(query, config=config)
 
 @ensure_config
 def table_exists(table: str, config=None) -> bool:
@@ -71,13 +74,13 @@ def table_exists(table: str, config=None) -> bool:
 
 @ensure_config
 def create_table(table: str, schema: str, config=None):
-    execute_query(f"Create table {config.schema}.{table} ({schema});")
+    execute_query(f"Create table {config.schema}.{table} ({schema});", config=config)
 
 @ensure_config
 def create_if_not_exists(table: str, schema: str, config=None):
     if not table_exists(table, config):
         logger.info(f"Table {table} does not exist")
-        create_table(table, schema, config)
+        create_table(table, schema, config=config)
 
 def get_db_connection(profile: str, warehouse_id: str):
     cfg = Config(profile=profile)

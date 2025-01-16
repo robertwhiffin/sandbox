@@ -43,14 +43,14 @@ class Config:
         )
 
     def from_sql(self):
-        if not table_exists(self.config_table, self):
+        if not table_exists(self.config_table, config=self):
             logger.warning(
                 f"No Config table found at {self.config_table}. Creating new one"
             )
-            create_table(self.config_table, "key STRING, value STRING", config)
-            insert(self.config_table, [{"key": k, "value": v} for k,v in self.config.items()],self)
+            create_table(self.config_table, "key STRING, value STRING", config=self)
+            insert(self.config_table, [{"key": k, "value": v} for k,v in self.config.items()],config=self)
         else:
-            config = read(self.config_table, self)
+            config = read(self.config_table, config=self)
             for _, row in config.iterrows():
                 self.config[row["key"]] = row["value"]
 
@@ -69,7 +69,7 @@ class Config:
 
     def set_configs(self, configs: dict):
         logger.info(f"Setting Configs {configs}")
-        insert(self.config_table, [{"key": k, "value": v} for k,v in configs.items()], self, keys=["key"], upsert=True)
+        insert(self.config_table, [{"key": k, "value": v} for k,v in configs.items()], keys=["key"], upsert=True)
         self.config = {**self.config, **configs}
 
     def get(self, key, default=None):

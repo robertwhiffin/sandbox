@@ -4,12 +4,14 @@ import json
 import os
 
 import gradio as gr
+import pandas as pd
 from databricks.sdk.service.workspace import ImportFormat, Language
 
 from sql_migration_assistant.app.llm import LLMCalls
 from sql_migration_assistant.app.prompt_helper import PromptHelper
 from sql_migration_assistant.app.similar_code import SimilarCode
 from sql_migration_assistant.config import get_config
+from sql_migration_assistant.utils.storage import table_exists, create_table, create_if_not_exists, insert, read
 
 config = get_config()
 w = config.w
@@ -63,6 +65,19 @@ def llm_translate_wrapper(
     )
     return translated_code
 
+def save_instruction(name: str, instruction_type: str, endpoint: str, temperature: float, max_tokens: int):
+    create_if_not_exists(config.get("INSTRUCTIONS_TABLE_NAME"), "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER")
+    insert(config.get("INSTRUCTIONS_TABLE_NAME"), [{
+        "name": name,
+        "description": "",
+        "instruction_type": instruction_type,
+        "endpoint": endpoint,
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }], keys=["name", "instruction_type"], upsert=True)
+
+def load_instructions(instruction_type: str) -> pd.DataFrame:
+    return read(config.get("INSTRUCTIONS_TABLE_NAME"), where=f"instruction_type = '{instruction_type}'")
 
 def produce_preview(explanation, translated_code, similar_code_notebook_url):
     if similar_code_notebook_url:
