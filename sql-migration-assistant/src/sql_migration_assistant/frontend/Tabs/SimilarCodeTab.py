@@ -1,5 +1,4 @@
 import gradio as gr
-from mlflow.protos.databricks_pb2 import visibility
 
 from sql_migration_assistant.frontend.callbacks import similar_code_helper
 

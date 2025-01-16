@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import yaml
 from databricks.sdk.errors import NotFound
 
 from sql_migration_assistant.utils import (
@@ -9,9 +10,6 @@ from sql_migration_assistant.utils import (
     logger,
     get_db_connection,
 )
-
-import yaml
-
 
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 

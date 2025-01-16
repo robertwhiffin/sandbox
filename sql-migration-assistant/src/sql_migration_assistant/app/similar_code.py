@@ -1,7 +1,5 @@
-from databricks.labs.lsql.core import StatementExecutionExt
-from databricks.sdk import WorkspaceClient
-
 import gradio as gr
+from databricks.sdk import WorkspaceClient
 
 
 class SimilarCode:

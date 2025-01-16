@@ -1,5 +1,4 @@
 import gradio as gr
-from databricks.sdk import WorkspaceClient
 
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import (
