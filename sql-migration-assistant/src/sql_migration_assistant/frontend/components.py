@@ -22,10 +22,14 @@ def get_foundation_model_dropdown(tab):
         interactive=True,
         label="Language Model",
     )
-    tab.select(lambda:
-                    gr.update(choices=[
-            ("" if e.name not in pay_per_token_models else "PPT - ") + e.name
-            for e in config.w.serving_endpoints.list()
-            if e.name
-        ]), outputs=foundation_model_dropdown)
+    tab.select(
+        lambda: gr.update(
+            choices=[
+                ("" if e.name not in pay_per_token_models else "PPT - ") + e.name
+                for e in config.w.serving_endpoints.list()
+                if e.name
+            ]
+        ),
+        outputs=foundation_model_dropdown,
+    )
     return foundation_model_dropdown

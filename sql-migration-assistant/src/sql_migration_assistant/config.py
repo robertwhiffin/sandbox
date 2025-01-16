@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import pandas as pd
 import yaml
 from databricks.sdk.errors import NotFound
 
@@ -9,7 +8,13 @@ from sql_migration_assistant.utils import (
     get_workspace_client,
     logger,
 )
-from sql_migration_assistant.utils.storage import get_db_connection, table_exists, create_table, insert, read
+from sql_migration_assistant.utils.storage import (
+    get_db_connection,
+    table_exists,
+    create_table,
+    insert,
+    read,
+)
 
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
@@ -31,7 +36,7 @@ class Config:
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
         self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
-        self.config_table = self.config.get('CONFIG_TABLE_NAME')
+        self.config_table = self.config.get("CONFIG_TABLE_NAME")
         self.validate_first_setup()
         self.con = get_db_connection(self.profile, self.warehouse.id)
         self.from_sql()
@@ -48,7 +53,11 @@ class Config:
                 f"No Config table found at {self.config_table}. Creating new one"
             )
             create_table(self.config_table, "key STRING, value STRING", config=self)
-            insert(self.config_table, [{"key": k, "value": v} for k,v in self.config.items()],config=self)
+            insert(
+                self.config_table,
+                [{"key": k, "value": v} for k, v in self.config.items()],
+                config=self,
+            )
         else:
             config = read(self.config_table, config=self)
             for _, row in config.iterrows():
@@ -69,7 +78,12 @@ class Config:
 
     def set_configs(self, configs: dict):
         logger.info(f"Setting Configs {configs}")
-        insert(self.config_table, [{"key": k, "value": v} for k,v in configs.items()], keys=["key"], upsert=True)
+        insert(
+            self.config_table,
+            [{"key": k, "value": v} for k, v in configs.items()],
+            keys=["key"],
+            upsert=True,
+        )
         self.config = {**self.config, **configs}
 
     def get(self, key, default=None):

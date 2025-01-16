@@ -12,5 +12,3 @@ def get_workspace_client(profile: str) -> WorkspaceClient:
     return WorkspaceClient(
         product="sql_migration_assistant", product_version="0.0.1", profile=profile
     )
-
-

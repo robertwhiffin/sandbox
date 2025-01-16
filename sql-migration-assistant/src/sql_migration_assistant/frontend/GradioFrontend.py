@@ -34,11 +34,17 @@ class GradioFrontend:
 """
 
     def __init__(self):
-        with gr.Blocks(theme=gr.themes.Soft(), css=str(Path(current_folder, "styles.css"))) as self.app:
+        with gr.Blocks(
+            theme=gr.themes.Soft(), css=str(Path(current_folder, "styles.css"))
+        ) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
-            self.initialized = gr.Radio(choices=[True, False], value=config.initial_setup_done(), visible=False)
+            self.initialized = gr.Radio(
+                choices=[True, False], value=config.initial_setup_done(), visible=False
+            )
             with gr.Tabs() as self.tabs:
-                self.initial_setup = ConfigTab("Initial Setup", self.initialized, not self.initialized.value)
+                self.initial_setup = ConfigTab(
+                    "Initial Setup", self.initialized, not self.initialized.value
+                )
                 self.instructions_tab = InstructionsTab(False)
 
                 self.interactive_input_code_tab = InteractiveInputCodeTab(False)
@@ -69,7 +75,6 @@ class GradioFrontend:
                 set_initialized,
                 outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
             )
-
 
             # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(

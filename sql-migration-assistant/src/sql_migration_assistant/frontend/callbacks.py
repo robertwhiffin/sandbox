@@ -10,7 +10,11 @@ from databricks.sdk.service.workspace import ImportFormat, Language
 from sql_migration_assistant.app.llm import LLMCalls
 from sql_migration_assistant.app.similar_code import SimilarCode
 from sql_migration_assistant.config import get_config
-from sql_migration_assistant.utils.storage import table_exists, create_table, create_if_not_exists, insert, read
+from sql_migration_assistant.utils.storage import (
+    create_if_not_exists,
+    insert,
+    read,
+)
 
 config = get_config()
 w = config.w
@@ -52,24 +56,48 @@ def llm_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
     )
     return intent
 
-def save_instruction(name: str, endpoint: str, temperature: float, max_tokens: int, system_prompt: str, instruction_type: str,):
-    create_if_not_exists(config.get("INSTRUCTIONS_TABLE_NAME"), "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING")
-    insert(config.get("INSTRUCTIONS_TABLE_NAME"), [{
-        "name": name,
-        "description": "",
-        "instruction_type": instruction_type,
-        "endpoint": endpoint,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "system_prompt": system_prompt
-    }], keys=["name", "instruction_type"], upsert=True)
+
+def save_instruction(
+    name: str,
+    endpoint: str,
+    temperature: float,
+    max_tokens: int,
+    system_prompt: str,
+    instruction_type: str,
+):
+    create_if_not_exists(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
+    )
+    insert(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        [
+            {
+                "name": name,
+                "description": "",
+                "instruction_type": instruction_type,
+                "endpoint": endpoint,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "system_prompt": system_prompt,
+            }
+        ],
+        keys=["name", "instruction_type"],
+        upsert=True,
+    )
     gr.Info("Configuration Saved")
 
-def load_instructions(instruction_type: str, name: str=None) -> pd.DataFrame:
-    create_if_not_exists(config.get("INSTRUCTIONS_TABLE_NAME"),
-                         "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING")
-    where = f"instruction_type = '{instruction_type}'" + ("" if name is None else f" AND name = '{name}'")
+
+def load_instructions(instruction_type: str, name: str = None) -> pd.DataFrame:
+    create_if_not_exists(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
+    )
+    where = f"instruction_type = '{instruction_type}'" + (
+        "" if name is None else f" AND name = '{name}'"
+    )
     return read(config.get("INSTRUCTIONS_TABLE_NAME"), where=where)
+
 
 def produce_preview(explanation, translated_code, similar_code_notebook_url):
     if similar_code_notebook_url:
