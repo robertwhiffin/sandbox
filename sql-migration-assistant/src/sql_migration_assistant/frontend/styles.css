@@ -1,0 +1,8 @@
+.custom-markdown {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    max-height: 300px;
+    overflow-y: auto
+}

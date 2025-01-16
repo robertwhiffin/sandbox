@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import gradio as gr
 
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
-from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
 from sql_migration_assistant.frontend.Tabs.ConfigTab import ConfigTab
+from sql_migration_assistant.frontend.Tabs.GenAITab import GenAITab, Purpose
 from sql_migration_assistant.frontend.Tabs.InstructionsTab import InstructionsTab
 from sql_migration_assistant.frontend.Tabs.InteractiveInputCodeTab import (
     InteractiveInputCodeTab,
@@ -13,7 +15,6 @@ from sql_migration_assistant.frontend.Tabs.InteractiveOutputTab import (
     InteractiveOutputTab,
 )
 from sql_migration_assistant.frontend.Tabs.SimilarCodeTab import SimilarCodeTab
-from sql_migration_assistant.frontend.Tabs.TranslationTab import TranslationTab
 from sql_migration_assistant.frontend.callbacks import (
     read_code_file,
     produce_preview,
@@ -23,6 +24,8 @@ from sql_migration_assistant.frontend.callbacks import (
 
 config = get_config()
 
+current_folder = Path(__file__).parent.resolve()
+
 
 class GradioFrontend:
     intro = """<img align="right" src="https://asset.brandfetch.io/idSUrLOWbH/idm22kWNaH.png" alt="logo" width="120">
@@ -31,7 +34,7 @@ class GradioFrontend:
 """
 
     def __init__(self):
-        with gr.Blocks(theme=gr.themes.Soft()) as self.app:
+        with gr.Blocks(theme=gr.themes.Soft(), css=str(Path(current_folder, "styles.css"))) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
             self.initialized = gr.Radio(choices=[True, False], value=config.initial_setup_done(), visible=False)
             with gr.Tabs() as self.tabs:
@@ -40,8 +43,8 @@ class GradioFrontend:
 
                 self.interactive_input_code_tab = InteractiveInputCodeTab(False)
                 self.batch_input_code_tab = BatchInputCodeTab(False)
-                self.code_explanation_tab = CodeExplanationTab(False)
-                self.translation_tab = TranslationTab(False)
+                self.code_explanation_tab = GenAITab(Purpose.EXPLAIN, False)
+                self.translation_tab = GenAITab(Purpose.TRANSLATE, False)
                 self.similar_code_tab = SimilarCodeTab(False)
                 self.batch_output_tab = BatchOutputTab(False)
                 self.interactive_output_tab = InteractiveOutputTab(False)
@@ -72,12 +75,12 @@ class GradioFrontend:
             self.batch_output_tab.execute.click(
                 execute_workflow,
                 inputs=[
-                    self.code_explanation_tab.intent_system_prompt,
-                    self.code_explanation_tab.intent_temperature,
-                    self.code_explanation_tab.intent_max_tokens,
-                    self.translation_tab.translation_system_prompt,
-                    self.translation_tab.translation_temperature,
-                    self.translation_tab.translation_max_tokens,
+                    self.code_explanation_tab.system_prompt,
+                    self.code_explanation_tab.temperature,
+                    self.code_explanation_tab.max_tokens,
+                    self.translation_tab.system_prompt,
+                    self.translation_tab.temperature,
+                    self.translation_tab.max_tokens,
                 ],
                 outputs=self.batch_output_tab.run_status,
             )
@@ -86,8 +89,8 @@ class GradioFrontend:
             self.interactive_output_tab.produce_preview_button.click(
                 produce_preview,
                 inputs=[
-                    self.code_explanation_tab.explained,
-                    self.translation_tab.translated,
+                    self.code_explanation_tab.output,
+                    self.translation_tab.output,
                     self.similar_code_tab.similar_code_notebook_url,
                 ],
                 outputs=self.interactive_output_tab.preview,
@@ -99,8 +102,8 @@ class GradioFrontend:
                 inputs=[
                     self.interactive_output_tab.file_name,
                     self.interactive_output_tab.preview,
-                    self.code_explanation_tab.intent_input_code,
-                    self.code_explanation_tab.explained,
+                    self.code_explanation_tab.input_code,
+                    self.code_explanation_tab.output,
                 ],
                 outputs=self.interactive_output_tab.adhoc_write_output,
             )
@@ -109,12 +112,12 @@ class GradioFrontend:
         self.code_input_objects = [
             self.interactive_input_code_tab.interactive_code,
             self.batch_input_code_tab.selected_file,
-            self.translation_tab.translation_input_code,
-            self.code_explanation_tab.intent_input_code,
+            self.translation_tab.input_code,
+            self.code_explanation_tab.input_code,
             self.similar_code_tab.similar_code_input,
         ]
         self.code_output_objects = [
-            self.translation_tab.translated,
+            self.translation_tab.output,
             self.similar_code_tab.similar_code_output,
         ]
 

@@ -48,22 +48,12 @@ def read_code_file(volume_path, file_name):
     return code
 
 
-def llm_intent_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
+def llm_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
     model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    intent = llm.llm_intent(
+    intent = llm.llm_invoke(
         system_prompt, input_code, model_name, max_tokens, temperature
     )
     return intent
-
-
-def llm_translate_wrapper(
-    system_prompt, input_code, model_name, max_tokens, temperature
-):
-    model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    translated_code = llm.llm_translate(
-        system_prompt, input_code, model_name, max_tokens, temperature
-    )
-    return translated_code
 
 def save_instruction(name: str, instruction_type: str, endpoint: str, temperature: float, max_tokens: int):
     create_if_not_exists(config.get("INSTRUCTIONS_TABLE_NAME"), "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER")
