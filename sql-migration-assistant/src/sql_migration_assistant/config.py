@@ -8,8 +8,8 @@ from databricks.sdk.errors import NotFound
 from sql_migration_assistant.utils import (
     get_workspace_client,
     logger,
-    get_db_connection,
 )
+from sql_migration_assistant.utils.storage import get_db_connection, table_exists, create_table, insert, read
 
 yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
@@ -20,6 +20,7 @@ class Config:
         "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
         "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
+        "INSTRUCTIONS_TABLE_NAME": "sql_migration_assistant_instructions",
     }
 
     def __init__(self, profile=None):
@@ -30,7 +31,7 @@ class Config:
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
         self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
-        self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME')}"
+        self.config_table = self.config.get('CONFIG_TABLE_NAME')
         self.validate_first_setup()
         self.con = get_db_connection(self.profile, self.warehouse.id)
         self.from_sql()
@@ -42,27 +43,14 @@ class Config:
         )
 
     def from_sql(self):
-        try:
-            self.w.tables.get(self.config_table)
-            exists = True
-        except NotFound:
-            exists = False
-
-        if not exists:
+        if not table_exists(self.config_table, self):
             logger.warning(
                 f"No Config table found at {self.config_table}. Creating new one"
             )
-            cursor = self.con.cursor()
-            cursor.execute(
-                f"Create table {self.config_table} (key STRING, value STRING);"
-            )
-            insert_query = f"""Insert into {self.config_table} values {",".join([f"('{key}', '{value}')" for key, value in self.config.items()])};"""
-            cursor.execute(insert_query)
-            cursor.close()
+            create_table(self.config_table, "key STRING, value STRING", config)
+            insert(self.config_table, [{"key": k, "value": v} for k,v in self.config.items()],self)
         else:
-            config = pd.read_sql(
-                f"Select key, value from {self.config_table}", con=self.con
-            )
+            config = read(self.config_table, self)
             for _, row in config.iterrows():
                 self.config[row["key"]] = row["value"]
 
@@ -81,10 +69,7 @@ class Config:
 
     def set_configs(self, configs: dict):
         logger.info(f"Setting Configs {configs}")
-        cursor = self.con.cursor()
-        insert_query = f"""Insert into {self.config_table} REPLACE WHERE key in ('{"','".join(configs.keys())}') VALUES {",".join([f"('{key}', '{value}')" for key, value in configs.items()])};"""
-        cursor.execute(insert_query)
-        cursor.close()
+        insert(self.config_table, [{"key": k, "value": v} for k,v in configs.items()], self, keys=["key"], upsert=True)
         self.config = {**self.config, **configs}
 
     def get(self, key, default=None):
