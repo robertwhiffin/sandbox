@@ -55,9 +55,10 @@ def main(profile, project_dir, config_path):
         app = w.apps.create_and_wait(app=App(config.get("APP_NAME")))
         print("Created new app")
         try:
-            w.warehouses.set_permissions(
+            w.warehouses.update_permissions(
                 warehouse.id,
                 access_control_list=[
+                    *w.warehouses.get_permissions(warehouse.id).access_control_list,
                     WarehouseAccessControlRequest(
                         service_principal_name=app.service_principal_name,
                         permission_level=WarehousePermissionLevel.CAN_USE,
