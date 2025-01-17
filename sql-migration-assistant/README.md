@@ -30,9 +30,9 @@ customise the application to their needs and entirely own the IP.
 ## Deployment
 ### 0. Initial Setup
 - Clone the repo
-- Install the dependencies 
+- Install the module with dependencies 
 ```shell
-pip install -r requirements.txt
+pip install . -e
 ```
 - Configure the databricks cli 
 
