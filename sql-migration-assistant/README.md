@@ -32,7 +32,7 @@ customise the application to their needs and entirely own the IP.
 - Clone the repo
 - Install the module with dependencies 
 ```shell
-pip install . -e
+pip install -e .
 ```
 - Configure the databricks cli 
 
