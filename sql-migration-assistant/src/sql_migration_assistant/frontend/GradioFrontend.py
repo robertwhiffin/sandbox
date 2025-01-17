@@ -1,5 +1,4 @@
 import gradio as gr
-from pyarrow import output_stream
 
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
@@ -21,7 +20,6 @@ from sql_migration_assistant.frontend.callbacks import (
     execute_workflow,
     write_adhoc_to_workspace,
 )
-from sql_migration_assistant.utils import logger
 
 config = get_config()
 
