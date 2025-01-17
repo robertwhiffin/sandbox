@@ -1,9 +1,6 @@
 import gradio as gr
-from databricks.sdk import WorkspaceClient
-from tomlkit import value
 
 from sql_migration_assistant.config import get_config
-from sql_migration_assistant.utils import get_workspace_client, logger
 
 config = get_config()
 
