@@ -15,7 +15,10 @@ def load_requirements(filename="requirements.txt"):
 
 setup(
     name="sql_migration_assistant",
-    version=__version__,
+    use_scm_version={
+        "root": "../",  # Specify the parent directory as the Git root
+        "relative_to": __file__,  # Ensure paths are resolved relative to this file
+    },
     packages=find_packages(where="src"),  # Specify src as the package directory
     package_dir={"": "src"},
     include_package_data=True,  # Include files specified in MANIFEST.in
@@ -28,5 +31,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=load_requirements(),
+    setup_requires=["setuptools", "setuptools-scm"],
     python_requires=">=3.10",
 )

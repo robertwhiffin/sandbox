@@ -1,6 +1,7 @@
 import os
 import sys
 
+from importlib.metadata import version
 # Get the directory of the current file
 module_dir = os.path.dirname(os.path.abspath(__file__)) + "/.."
 
@@ -12,6 +13,7 @@ print(module_dir)
 
 def main():
     from sql_migration_assistant.frontend.GradioFrontend import GradioFrontend
+    print(version("sql_migration_assistant"))
 
     frontend = GradioFrontend()
     frontend.app.launch(
