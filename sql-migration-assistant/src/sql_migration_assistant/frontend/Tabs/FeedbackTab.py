@@ -5,8 +5,8 @@ class FeedbackTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Instructions") as self.tab:
+    def __init__(self, visible=True):
+        with gr.Tab(label="Instructions", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 """
         ## Comments? Feature Suggestions? Bugs?

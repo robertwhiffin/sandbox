@@ -44,16 +44,16 @@ class UnityCatalogInfra:
             "bronze_raw_code": f"(path STRING, modificationTime TIMESTAMP, length INT, content STRING,loadDatetime TIMESTAMP)",
             "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
             "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
-                                    f"loadDatetime TIMESTAMP, promptID INT, "
-                                    f"agentConfigs MAP <STRING, MAP <STRING, STRING>>)",
+            f"loadDatetime TIMESTAMP, promptID INT, "
+            f"agentConfigs MAP <STRING, MAP <STRING, STRING>>)",
             "silver_llm_responses": f"(path STRING, promptID INT, processedDateString STRING, content STRING, "
-                                    f"agentName STRING, agentResponse STRING, outputNotebookPath STRING, "
-                                    f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, "
-                                    f"similarity:DOUBLE>>)",
+            f"agentName STRING, agentResponse STRING, outputNotebookPath STRING, "
+            f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, "
+            f"similarity:DOUBLE>>)",
             "gold_transformed_notebooks": f"(promptID INT, content STRING, processedDateString STRING, notebookAsString STRING, "
-                                          f"outputVolumePath STRING, outputNotebookPath STRING, "
-                                          f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>, "
-                                          f"agentResponses MAP<STRING,STRING>)",
+            f"outputVolumePath STRING, outputNotebookPath STRING, "
+            f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>, "
+            f"agentResponses MAP<STRING,STRING>)",
         }
         self.volume_name = "sql_migration_assistant_volume"
         self.volume_dirs = {

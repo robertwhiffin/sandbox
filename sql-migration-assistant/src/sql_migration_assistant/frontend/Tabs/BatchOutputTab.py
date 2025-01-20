@@ -1,17 +1,19 @@
 import gradio as gr
 
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import make_status_box_visible
+
+config = get_config()
 
 
 class BatchOutputTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Execute Job", visible=False) as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Execute Job", visible=visible) as self.tab:
             self.header = gr.Markdown(
-                """ ## Execute Job
+                f""" ## Execute Job
     
                 This tab is for executing the job to covert the code files in the Unity Catalog Volume to Databricks 
                 Notebooks. Once you are happy with your system prompts and and the explanation and translation outputs, 
@@ -20,7 +22,7 @@ class BatchOutputTab:
                 This will kick off a Workflow which will ingest the code files, write them to a Delta Table, apply the AI
                 agents, and output a Databricks Notebook per input code file. This notebook will have the intent at the top 
                 of the notebook in a markdown cell, and the translated code in the cell below. These notebooks are found in 
-                the workspace at *{WORKSPACE_LOCATION}/outputNotebooks* and in the *Output Code* folder in the UC Volume
+                the workspace at {config.get_workspace_path()}/outputNotebooks* and in the *Output Code* folder in the UC Volume
                 
                 The intent will also be stored in a Unity Catalog table and vector search index for finding similar code. 
                 """

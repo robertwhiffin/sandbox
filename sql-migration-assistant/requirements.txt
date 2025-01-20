@@ -1,7 +1,9 @@
-databricks-sdk==0.30.0
+databricks-sdk
+databricks-cli
 pyyaml
 databricks-labs-blueprint==0.8.2
 databricks-labs-lsql==0.9.0
+databricks-sql-connector
 gradio==4.27.0
 aiohttp==3.10.5
 fastapi==0.112.2

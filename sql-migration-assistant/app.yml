@@ -1,4 +1,0 @@
-command: [
-  "python",
-  "src/sql_migration_assistant/main.py"
-]

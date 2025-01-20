@@ -5,8 +5,8 @@ class InstructionsTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Instructions") as self.tab:
+    def __init__(self, visible=True):
+        with gr.Tab(label="Instructions", visible=visible, id=1) as self.tab:
             self.header = gr.Markdown(
                 """
         Legion is an AI powered tool that aims to accelerate the migration of code to Databricks for low cost and effort. It 
@@ -40,7 +40,7 @@ class InstructionsTab:
                 self.operation = gr.Radio(
                     label="Select operation mode",
                     choices=["Interactive mode", "Batch mode"],
-                    value="Interactive mode",
+                    value=None,
                     type="value",
                     interactive=True,
                 )
@@ -48,7 +48,11 @@ class InstructionsTab:
                     label="Select input code language syntax",
                     # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
                     # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
-                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
+                    choices=[
+                        ("SQL", "sql"),
+                        ("Python", "python"),
+                        ("No formatting", "r"),
+                    ],
                     value="sql",
                     type="value",
                     interactive=True,
@@ -57,7 +61,11 @@ class InstructionsTab:
                     label="Select output code language syntax",
                     # the r formatter doesn't do anything, and switching to None doesn't seem to update the code boxes
                     # away from their previous value. So will only offer choices of SQL, Python, or no formatting.
-                    choices=[("SQL", "sql"), ("Python", "python"), ("No formatting", "r")],
+                    choices=[
+                        ("SQL", "sql"),
+                        ("Python", "python"),
+                        ("No formatting", "r"),
+                    ],
                     value="sql",
                     type="value",
                     interactive=True,

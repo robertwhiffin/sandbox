@@ -1,9 +1,10 @@
 import gradio as gr
-from pyarrow import output_stream
 
+from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.Tabs.BatchInputCodeTab import BatchInputCodeTab
 from sql_migration_assistant.frontend.Tabs.BatchOutputTab import BatchOutputTab
 from sql_migration_assistant.frontend.Tabs.CodeExplanationTab import CodeExplanationTab
+from sql_migration_assistant.frontend.Tabs.ConfigTab import ConfigTab
 from sql_migration_assistant.frontend.Tabs.InstructionsTab import InstructionsTab
 from sql_migration_assistant.frontend.Tabs.InteractiveInputCodeTab import (
     InteractiveInputCodeTab,
@@ -16,9 +17,11 @@ from sql_migration_assistant.frontend.Tabs.TranslationTab import TranslationTab
 from sql_migration_assistant.frontend.callbacks import (
     read_code_file,
     produce_preview,
-    exectute_workflow,
-    write_adhoc_to_workspace
+    execute_workflow,
+    write_adhoc_to_workspace,
 )
+
+config = get_config()
 
 
 class GradioFrontend:
@@ -30,19 +33,44 @@ class GradioFrontend:
     def __init__(self):
         with gr.Blocks(theme=gr.themes.Soft()) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
-            self.instructions_tab = InstructionsTab()
+            self.initialized = gr.Radio(choices=[True, False], value=config.initial_setup_done(), visible=False)
+            with gr.Tabs() as self.tabs:
+                self.initial_setup = ConfigTab("Initial Setup", self.initialized, not self.initialized.value)
+                self.instructions_tab = InstructionsTab(False)
 
-            self.interactive_input_code_tab = InteractiveInputCodeTab()
-            self.batch_input_code_tab = BatchInputCodeTab()
-            self.code_explanation_tab = CodeExplanationTab()
-            self.translation_tab = TranslationTab()
-            self.similar_code_tab = SimilarCodeTab()
-            self.batch_output_tab = BatchOutputTab()
-            self.interactive_output_tab = InteractiveOutputTab()
+                self.interactive_input_code_tab = InteractiveInputCodeTab(False)
+                self.batch_input_code_tab = BatchInputCodeTab(False)
+                self.code_explanation_tab = CodeExplanationTab(False)
+                self.translation_tab = TranslationTab(False)
+                self.similar_code_tab = SimilarCodeTab(False)
+                self.batch_output_tab = BatchOutputTab(False)
+                self.interactive_output_tab = InteractiveOutputTab(False)
+                self.config_tab = ConfigTab("Configuration", self.initialized, False)
+
+            def set_initialized():
+                if config.initial_setup_done():
+                    self.initialized = True
+                    return [
+                        gr.update(visible=False),
+                        gr.update(visible=True),
+                        gr.Tabs(selected=self.instructions_tab.tab.id),
+                    ]
+                return [gr.update(), gr.update(), gr.update()]
+
+            self.app.load(
+                set_initialized,
+                inputs=None,
+                outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
+            )
+            self.initialized.change(
+                set_initialized,
+                outputs=[self.initial_setup.tab, self.instructions_tab.tab, self.tabs],
+            )
+
 
             # Execute workflow when in batch mode
             self.batch_output_tab.execute.click(
-                exectute_workflow,
+                execute_workflow,
                 inputs=[
                     self.code_explanation_tab.intent_system_prompt,
                     self.code_explanation_tab.intent_temperature,
@@ -60,7 +88,7 @@ class GradioFrontend:
                 inputs=[
                     self.code_explanation_tab.explained,
                     self.translation_tab.translated,
-                    self.similar_code_tab.similar_code_notebook_url
+                    self.similar_code_tab.similar_code_notebook_url,
                 ],
                 outputs=self.interactive_output_tab.preview,
             )
@@ -76,7 +104,6 @@ class GradioFrontend:
                 ],
                 outputs=self.interactive_output_tab.adhoc_write_output,
             )
-
 
         # collect all the input and output objects into a list to make it simpler to update them
         self.code_input_objects = [
@@ -95,9 +122,10 @@ class GradioFrontend:
         with self.app:
             self.add_logic_loading_batch_mode()
             self.add_logic_loading_interactive_mode()
-            self.change_tabs_based_on_operation_mode()
+            self.change_tab_visibility()
             self.update_input_language()
             self.update_output_language()
+            self.app.load()
 
     def add_logic_loading_batch_mode(self):
 
@@ -125,16 +153,26 @@ class GradioFrontend:
             outputs=self.code_input_objects,
         )
 
-    def change_tabs_based_on_operation_mode(self):
+    def change_tab_visibility(self):
         for tab in [self.batch_input_code_tab, self.batch_output_tab]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x != "Interactive mode"))),
                 self.instructions_tab.operation,
                 tab.tab,
             )
-        for tab in [self.interactive_input_code_tab, self.interactive_output_tab, self.similar_code_tab]:
+        for tab in [
+            self.interactive_input_code_tab,
+            self.interactive_output_tab,
+            self.similar_code_tab,
+        ]:
             self.instructions_tab.operation.change(
                 lambda x: (gr.update(visible=(x == "Interactive mode"))),
+                self.instructions_tab.operation,
+                tab.tab,
+            )
+        for tab in [self.translation_tab, self.code_explanation_tab, self.config_tab]:
+            self.instructions_tab.operation.change(
+                lambda x: (gr.update(visible=True)),
                 self.instructions_tab.operation,
                 tab.tab,
             )
@@ -142,18 +180,19 @@ class GradioFrontend:
     def update_input_language(self):
         def inner(language):
             return [gr.update(language=language)] * len(self.code_input_objects)
+
         self.instructions_tab.input_language.input(
             fn=inner,
             inputs=self.instructions_tab.input_language,
-            outputs= self.code_input_objects
+            outputs=self.code_input_objects,
         )
-
 
     def update_output_language(self):
         def inner(language):
             return [gr.update(language=language)] * len(self.code_output_objects)
+
         self.instructions_tab.output_language.input(
             fn=inner,
             inputs=self.instructions_tab.output_language,
-            outputs= self.code_output_objects
+            outputs=self.code_output_objects,
         )

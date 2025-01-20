@@ -1,5 +1,11 @@
+from pathlib import Path
+
 from setuptools import setup, find_packages
 
+# Read the version from version.py
+version_file = Path("src/sql_migration_assistant/version.py").read_text()
+__version__ = "" # This is for the linter to stop complaining about undefined variables
+exec(version_file)  # This will define __version__
 
 # Read the requirements.txt file
 def load_requirements(filename="requirements.txt"):
@@ -9,7 +15,7 @@ def load_requirements(filename="requirements.txt"):
 
 setup(
     name="sql_migration_assistant",
-    version="0.1",
+    version=__version__,
     packages=find_packages(where="src"),  # Specify src as the package directory
     package_dir={"": "src"},
     include_package_data=True,  # Include files specified in MANIFEST.in

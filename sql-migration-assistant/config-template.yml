@@ -1,0 +1,6 @@
+CATALOG: <your-catalog>
+SCHEMA: <your-schema>
+SQL_WAREHOUSE_NAME: <Warehouse-name>
+DEPLOYMENT_MODE: <only-app-supported-for-now>
+APP_NAME: <name-of-databricks-app>
+DEPLOYMENT_PATH: <workspace-path-for-source-code>

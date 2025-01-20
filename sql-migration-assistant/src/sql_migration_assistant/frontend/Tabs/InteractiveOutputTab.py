@@ -1,22 +1,22 @@
 import gradio as gr
 
-from sql_migration_assistant.config import DATABRICKS_HOST, CATALOG, SCHEMA, VOLUME_NAME
-from sql_migration_assistant.frontend.callbacks import write_adhoc_to_workspace
+from sql_migration_assistant.config import get_config
+
+config = get_config()
 
 
 class InteractiveOutputTab:
     header: gr.Markdown
     tab: gr.Tab
 
-    def __init__(self):
-        with gr.Tab(label="Write file to Workspace") as tab:
-            self.tab = tab
+    def __init__(self, visible=True):
+        with gr.Tab(label="Write file to Workspace", visible=visible) as self.tab:
             self.header = gr.Markdown(
                 f""" ## Write to Workspace
 
             Write out your explained and translated file to a notebook in the workspace. 
             You must provide a filename for the notebook. The notebook will be written to the workspace, saved to the 
-            Output Code location in the Unity Catalog Volume [here]({DATABRICKS_HOST}/explore/data/volumes/{CATALOG}/{SCHEMA}/{VOLUME_NAME}) 
+            Output Code location in the Unity Catalog Volume [here]({config.w.config.host}/explore/data/volumes/{config.catalog}/{config.get('SCHEMA')}/{config.get('VOLUME')}) 
             , and the intent will be saved to the intent table. 
             """
             )
@@ -35,9 +35,7 @@ class InteractiveOutputTab:
               """
             # this is ahidden box which will hold the url of the output notebook, which can be passed to the save intent
             # function
-            self.hidden_url_textbox = gr.Textbox(
-                visible=False
-            )
+            self.hidden_url_textbox = gr.Textbox(visible=False)
             with gr.Row():
                 self.produce_preview_button = gr.Button("Produce Preview")
                 with gr.Column():
@@ -48,5 +46,3 @@ class InteractiveOutputTab:
                     )
 
             self.preview = gr.Code(label="Preview", language="python")
-
-
