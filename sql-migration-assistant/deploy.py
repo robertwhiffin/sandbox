@@ -1,5 +1,6 @@
 import os
 import subprocess
+from importlib.metadata import version
 from pathlib import Path
 
 import yaml
@@ -12,7 +13,6 @@ from databricks.sdk.service.sql import (
 )
 
 from sql_migration_assistant.utils import logger, get_db_connection
-from sql_migration_assistant.version import __version__
 
 import argparse
 
@@ -38,7 +38,7 @@ def main(profile, project_dir, config_path):
 
     create_app_yml(config)
 
-    w = WorkspaceClient(profile=profile, product="sql_migration_assistant", product_version=__version__)
+    w = WorkspaceClient(profile=profile, product="sql_migration_assistant", product_version=version("sql_migration_assistant"))
     warehouses = [
         w for w in w.warehouses.list() if w.name == config.get("SQL_WAREHOUSE_NAME")
     ]
