@@ -31,11 +31,11 @@ class PromptHelper:
         con = config.con
         cursor = con.cursor()
         agentConfig = f"MAP ('{agent}', MAP ('system_prompt', '{prompt}', 'temperature', '{temperature}', 'max_tokens', '{token_limit}'))"
-        con.execute(
+        cursor.execute(
             f"INSERT INTO {self.SCHEMA}.{self.PROMPT_TABLE} "
             f"(promptID, agentConfigs, loadDatetime) "
             f"VALUES (hash(CURRENT_TIMESTAMP()), {agentConfig} ,CURRENT_TIMESTAMP())"
         )
-        con.close()
+        cursor.close()
 
         gr.Info("Prompt saved")
