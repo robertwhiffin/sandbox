@@ -41,7 +41,6 @@ def list_files_recursive(parent_path: str | Path, sub_path: str) -> Iterator[str
 
 
 class SetUpMigrationAssistant:
-
     # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
     def _handle_errors(func):
         def wrapper(*args, **kwargs):

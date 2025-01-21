@@ -6,7 +6,6 @@ from databricks.sdk.service.compute import State, DataSecurityMode
 
 
 class AppServingClusterInfra:
-
     def __init__(self, config, workspace_client: WorkspaceClient, p: Prompts):
         self.w = workspace_client
         self.config = config

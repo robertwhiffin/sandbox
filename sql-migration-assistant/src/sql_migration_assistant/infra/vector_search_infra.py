@@ -83,9 +83,9 @@ class VectorSearchInfra:
             ]  # need to remove the (num indices) part of the string
             self.migration_assistant_VS_endpoint = choice
             # update config with user choice
-            self.config["VECTOR_SEARCH_ENDPOINT_NAME"] = (
-                self.migration_assistant_VS_endpoint
-            )
+            self.config[
+                "VECTOR_SEARCH_ENDPOINT_NAME"
+            ] = self.migration_assistant_VS_endpoint
 
     def choose_embedding_model(self):
         # list all serving endpoints with a task of embedding
@@ -116,12 +116,11 @@ class VectorSearchInfra:
         else:
             self.migration_assistant_embedding_model_name = choice
             # update config with user choice
-            self.config["EMBEDDING_MODEL_ENDPOINT_NAME"] = (
-                self.migration_assistant_embedding_model_name
-            )
+            self.config[
+                "EMBEDDING_MODEL_ENDPOINT_NAME"
+            ] = self.migration_assistant_embedding_model_name
 
     def _create_embedding_model_endpoint(self):
-
         latest_version = get_latest_model_version(
             model_name=self.default_embedding_model_UC_path
         )

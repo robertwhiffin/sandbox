@@ -3,7 +3,6 @@ from databricks.sdk import WorkspaceClient
 
 
 class SimilarCode:
-
     def __init__(
         self,
         workspace_client: WorkspaceClient,

@@ -7,7 +7,6 @@ from sql_migration_assistant.utils.uc_model_version import get_latest_model_vers
 
 
 class ChatInfra:
-
     def __init__(self, config, workspace_client: WorkspaceClient, p: Prompts):
         self.w = workspace_client
         self.config = config
@@ -74,9 +73,9 @@ class ChatInfra:
                     question = "Please choose an endpoint to use:"
                     choice = self.prompts.choice(question, endpoint_names)
                     self.foundation_llm_name = choice
-                    self.config["SERVED_FOUNDATION_MODEL_NAME"] = (
-                        self.foundation_llm_name
-                    )
+                    self.config[
+                        "SERVED_FOUNDATION_MODEL_NAME"
+                    ] = self.foundation_llm_name
                     self.provisioned_throughput_endpoint_name = (
                         "migration_assistant_endpoint"
                     )
@@ -96,12 +95,12 @@ class ChatInfra:
                         self.foundation_llm_name
                     )
                     # update config with user choice
-                    self.config["SERVED_FOUNDATION_MODEL_NAME"] = (
-                        self.foundation_llm_name
-                    )
-                    self.config["PROVISIONED_THROUGHPUT_ENDPOINT_NAME"] = (
-                        self.provisioned_throughput_endpoint_name
-                    )
+                    self.config[
+                        "SERVED_FOUNDATION_MODEL_NAME"
+                    ] = self.foundation_llm_name
+                    self.config[
+                        "PROVISIONED_THROUGHPUT_ENDPOINT_NAME"
+                    ] = self.provisioned_throughput_endpoint_name
 
     def _pay_per_token_exists(self):
         """

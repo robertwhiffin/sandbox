@@ -36,7 +36,6 @@ class RunReviewApp:
         return self.config.get("SERVING_CLUSTER_ID")
 
     def _library_install(self):
-
         for l in self.libraries:
             self.executor.install_notebook_library(l)
         self.executor.run("pip install .")
@@ -55,7 +54,6 @@ class RunReviewApp:
         )
 
     def _get_proxy_url(self, organisation_id):
-
         def get_cloud_proxy_settings(
             cloud: str, host: str, org_id: str, cluster_id: str, port: int
         ):

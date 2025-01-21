@@ -85,7 +85,6 @@ class UnityCatalogInfra:
         self.config["CATALOG"] = self.migration_assistant_UC_catalog
 
     def create_schema(self):
-
         # update config with user choice
         self.config["SCHEMA"] = self.migration_assistant_UC_schema
         try:

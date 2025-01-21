@@ -13,7 +13,9 @@ logger.addHandler(StreamHandler())
 
 def get_workspace_client(profile: str) -> WorkspaceClient:
     return WorkspaceClient(
-        product="sql_migration_assistant", product_version=version("sql_migration_assistant"), profile=profile
+        product="sql_migration_assistant",
+        product_version=version("sql_migration_assistant"),
+        profile=profile,
     )
 
 
