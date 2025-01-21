@@ -4,7 +4,7 @@ from logging import StreamHandler
 from databricks import sql
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.config import Config
-from sql_migration_assistant.version import __version__
+from importlib.metadata import version
 
 logger = logging.getLogger("sql_migration_assistant")
 logger.setLevel(logging.INFO)
@@ -13,7 +13,7 @@ logger.addHandler(StreamHandler())
 
 def get_workspace_client(profile: str) -> WorkspaceClient:
     return WorkspaceClient(
-        product="sql_migration_assistant", product_version=__version__, profile=profile
+        product="sql_migration_assistant", product_version=version("sql_migration_assistant"), profile=profile
     )
 
 

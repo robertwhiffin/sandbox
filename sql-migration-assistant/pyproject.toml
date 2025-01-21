@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=42", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql_migration_assistant"
+description = "A brief description of your project."
+readme = "README.md"
+dynamic = ["version"]
+requires-python = ">=3.10"
+dependencies = [
+    "databricks-sdk",
+    "databricks-cli",
+    "pyyaml",
+    "databricks-labs-blueprint",
+    "databricks-sql-connector",
+    "gradio==5.12.0",
+    "aiohttp",
+    "fastapi",
+    "pydantic==2.10.5",
+    "mlflow",
+    "openai",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["sql_migration_assistant"]  # Automatically finds sub-packages
+include-package-data = true
+
+[tool.setuptools_scm]
+root = ".."  # Specify the Git root directory
+relative_to = "pyproject.toml"  # Ensure paths are resolved relative to this file
