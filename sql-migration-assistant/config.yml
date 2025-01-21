@@ -1,6 +1,0 @@
-CATALOG: sebastian_grunwald
-SCHEMA: sql_migration_assistant
-SQL_WAREHOUSE_NAME: "Shared Endpoint"
-DEPLOYMENT_MODE: app
-APP_NAME: sql-migration-assistant-sgr
-DEPLOYMENT_PATH: /Workspace/Users/sebastian.grunwald@databricks.com/sql_migration_assistant_2

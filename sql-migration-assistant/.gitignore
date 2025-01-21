@@ -1,3 +1,4 @@
 .databrickscfg
 .databricks
+config.yml
 *.pyc
