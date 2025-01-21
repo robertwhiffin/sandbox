@@ -97,7 +97,9 @@ class GradioFrontend:
             self.interactive_output_tab.write_to_workspace_button.click(
                 fn=write_adhoc_to_workspace,
                 inputs=[
+                    self.interactive_output_tab.folder_name,
                     self.interactive_output_tab.file_name,
+                    self.interactive_output_tab.overwrite_checkbox,
                     self.interactive_output_tab.preview,
                     self.code_explanation_tab.intent_input_code,
                     self.code_explanation_tab.explained,
