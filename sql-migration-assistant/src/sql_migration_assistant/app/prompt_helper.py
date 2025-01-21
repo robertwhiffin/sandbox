@@ -7,8 +7,8 @@ config = get_config()
 
 
 class PromptHelper:
-    def __init__(self, schema, prompt_table):
-        self.SCHEMA = schema
+    def __init__(self, catalog_schema, prompt_table):
+        self.CATALOG_SCHEMA = catalog_schema
         self.PROMPT_TABLE = prompt_table
 
     def get_prompts(self, agent):
@@ -19,7 +19,7 @@ class PromptHelper:
             f"       agentConfigs.{agent}.system_prompt as prompt,"
             f"       agentConfigs.{agent}.temperature as temperature,"
             f"       agentConfigs.{agent}.max_tokens as token_limit,"
-            f"       loadDatetime as save_time FROM {self.SCHEMA}.{self.PROMPT_TABLE} "
+            f"       loadDatetime as save_time FROM {self.CATALOG_SCHEMA}.{self.PROMPT_TABLE} "
             f"WHERE map_keys(agentConfigs) = array('{agent}') "
             f"ORDER BY save_time DESC ",
             con=con,
@@ -32,7 +32,7 @@ class PromptHelper:
         cursor = con.cursor()
         agentConfig = f"MAP ('{agent}', MAP ('system_prompt', '{prompt}', 'temperature', '{temperature}', 'max_tokens', '{token_limit}'))"
         cursor.execute(
-            f"INSERT INTO {self.SCHEMA}.{self.PROMPT_TABLE} "
+            f"INSERT INTO {self.CATALOG_SCHEMA}.{self.PROMPT_TABLE} "
             f"(promptID, agentConfigs, loadDatetime) "
             f"VALUES (hash(CURRENT_TIMESTAMP()), {agentConfig} ,CURRENT_TIMESTAMP())"
         )

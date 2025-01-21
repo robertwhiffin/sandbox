@@ -6,16 +6,16 @@ class SimilarCode:
     def __init__(
         self,
         workspace_client: WorkspaceClient,
-        schema,
+        catalog_schema,
         code_intent_table_name,
         VS_index_name,
         VS_endpoint_name,
     ):
         self.w = workspace_client
-        self.schema = schema
+        self.catalog_schema = catalog_schema
         # FQN = Fully Qualified Name
-        self.code_intent_table_FQN = f"{schema}.{code_intent_table_name}"
-        self.vs_index_FQN = f"{schema}.{VS_index_name}"
+        self.code_intent_table_FQN = f"{catalog_schema}.{code_intent_table_name}"
+        self.vs_index_FQN = f"{catalog_schema}.{VS_index_name}"
         self.vs_endpoint_name = VS_endpoint_name
 
     def save_intent(self, code, intent, url):

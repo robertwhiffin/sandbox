@@ -29,8 +29,10 @@ class Config:
         )
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
-        self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
-        self.config_table = f"{self.schema}.{self.config.get('CONFIG_TABLE_NAME')}"
+        self.catalog_schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
+        self.config_table = (
+            f"{self.catalog_schema}.{self.config.get('CONFIG_TABLE_NAME')}"
+        )
         self.validate_first_setup()
         self.con = get_db_connection(self.profile, self.warehouse.id)
         self.from_sql()
@@ -113,10 +115,10 @@ class Config:
                 f"Catalog {self.catalog} does not exist. Please create it before deployment"
             )
         try:
-            self.w.schemas.get(self.schema)
+            self.w.schemas.get(self.catalog_schema)
         except NotFound:
             errors.append(
-                f"Schema {self.schema} does not exist. Please create it before deployment"
+                f"Schema {self.catalog_schema} does not exist. Please create it before deployment"
             )
 
         warehouses = [
