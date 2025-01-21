@@ -17,7 +17,7 @@ w = config.w
 llm = LLMCalls(w)
 
 prompt_helper = PromptHelper(
-    schema=config.catalog_schema, prompt_table=config.get("PROMPT_TABLE")
+    catalog_schema=config.catalog_schema, prompt_table=config.get("PROMPT_TABLE")
 )
 similar_code_helper = SimilarCode(
     workspace_client=w,

@@ -1,6 +1,7 @@
 import gradio as gr
 
 from sql_migration_assistant.config import get_config
+from sql_migration_assistant.frontend.components import get_foundation_model_dropdown
 
 config = get_config()
 
@@ -44,6 +45,10 @@ class ConfigTab:
                 interactive=True,
                 value=config.get("VOLUME"),
             )
+            self.default_llm_dropdown = get_foundation_model_dropdown(
+                self.tab, label="Default Foundation Endpoint"
+            )
+
             self.intent_tabel_name_box = gr.Textbox(
                 label="Intent Table",
                 interactive=True,
@@ -65,18 +70,20 @@ class ConfigTab:
                 f"Save {title}",
             )
 
-            def set_configs(a, b, c, x, y, z):
+            def set_configs(a, b, c, d, x, y, z):
                 config.set_configs(
                     {
                         "EMBEDDING_MODEL_ENDPOINT": a,
                         "VECTOR_SEARCH_ENDPOINT_NAME": b,
                         "VOLUME": c,
+                        "DEFAULT_LLM": d,
                         "CODE_INTENT_TABLE_NAME": x,
                         "PROMPT_TABLE": y,
                         "VS_INDEX_NAME": z,
                     }
                 )
-                if a and b and c:
+                gr.Info("Configurations saved")
+                if a and b and c and d:
                     return gr.update(value=True)
                 return gr.update()
 
@@ -86,6 +93,7 @@ class ConfigTab:
                     self.embedding_model_endpoint_dropdown,
                     self.vector_search_dropdown,
                     self.volume_dropdown,
+                    self.default_llm_dropdown,
                     self.intent_tabel_name_box,
                     self.prompt_tabel_name_box,
                     self.vector_search_index_box,

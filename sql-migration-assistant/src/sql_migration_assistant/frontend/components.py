@@ -13,18 +13,12 @@ def get_foundation_endpoints():
     ]
 
 
-def get_foundation_model_dropdown(model_name, tab):
+def get_foundation_model_dropdown(tab, label="Foundation Endpoint"):
     foundation_model_dropdown = gr.Dropdown(
         choices=get_foundation_endpoints(),
-        label="Foundation Endpoint",
+        label=label,
         interactive=True,
-        value=config.get(model_name),
-    )
-    foundation_model_dropdown.change(
-        lambda x: config.set_config(
-            model_name, x if not x.startswith("PPT - ") else x[6:]
-        ),
-        inputs=foundation_model_dropdown,
+        value=config.get("DEFAULT_LLM"),
     )
     tab.select(
         lambda: gr.update(choices=get_foundation_endpoints()),

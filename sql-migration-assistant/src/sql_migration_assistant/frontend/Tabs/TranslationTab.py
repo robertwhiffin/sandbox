@@ -28,9 +28,7 @@ class TranslationTab:
                 you can do so in the *Load / save instructions* section. 
                 """
             )
-            self.foundation_model_dropdown = get_foundation_model_dropdown(
-                "TRANSLATION_MODEL_NAME", self.tab
-            )
+            self.foundation_model_dropdown = get_foundation_model_dropdown(self.tab)
             with gr.Accordion(label="Advanced Settings", open=False):
                 gr.Markdown(
                     """ ### Advanced settings for the translation AI Agent.
