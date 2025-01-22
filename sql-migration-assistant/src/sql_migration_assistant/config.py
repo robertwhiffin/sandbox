@@ -69,7 +69,7 @@ class Config:
                 self.config[row["key"]] = row["value"]
 
     def from_environ(self):
-        for key in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
+        for key in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
             self.config[key] = os.environ.get(key)
 
     def from_yaml(self):
@@ -102,7 +102,7 @@ class Config:
     def validate_first_setup(self):
         """Validate the initial configuration"""
         errors = []
-        for k in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
+        for k in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
             errors.extend(self.validate_key_exists(k))
 
         if self.config.get("DEPLOYMENT_MODE") == "app":
@@ -121,17 +121,12 @@ class Config:
                 f"Schema {self.catalog_schema} does not exist. Please create it before deployment"
             )
 
-        warehouses = [
-            w
-            for w in self.w.warehouses.list()
-            if w.name == self.config.get("SQL_WAREHOUSE_NAME")
-        ]
-        if len(warehouses) == 0:
+        try:
+            self.warehouse = self.w.warehouses.get(self.get("WAREHOUSE_ID"))
+        except NotFound:
             errors.append(
-                f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} found. Please create it before deployment"
+                f"Warehouse {self.config.get('WAREHOUSE_ID')} found. Please create it before deployment"
             )
-        else:
-            self.warehouse = warehouses[0]
         if len(errors) > 0:
             raise Exception(
                 f"Initial Configuration not valid. Please fix the following errors:"

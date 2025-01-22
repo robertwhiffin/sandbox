@@ -1,221 +1,267 @@
 import logging
-import os
-from pathlib import Path
-from typing import Iterator
 
-from databricks.labs.lsql.core import StatementExecutionExt
+from typing import Iterator, Callable
+
+from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import ResourceAlreadyExists, BadRequest
 from databricks.sdk.errors.platform import PermissionDenied
-
-from sql_migration_assistant.infra.app_serving_cluster_infra import (
-    AppServingClusterInfra,
+from databricks.sdk.service.apps import App
+from databricks.sdk.service.sql import (
+    CreateWarehouseRequestWarehouseType,
+    WarehouseAccessControlRequest,
+    WarehousePermissionLevel,
 )
-from sql_migration_assistant.infra.chat_infra import ChatInfra
-from sql_migration_assistant.infra.jobs_infra import JobsInfra
-from sql_migration_assistant.infra.secrets_infra import SecretsInfra
-from sql_migration_assistant.infra.sql_warehouse_infra import SqlWarehouseInfra
-from sql_migration_assistant.infra.unity_catalog_infra import UnityCatalogInfra
-from sql_migration_assistant.infra.vector_search_infra import VectorSearchInfra
-from sql_migration_assistant.utils.run_review_app import RunReviewApp
-from sql_migration_assistant.utils.upload_files_to_workspace import FileUploader
+
+from sql_migration_assistant.utils import logger, get_db_connection
 
 
-def list_files_recursive(parent_path: str | Path, sub_path: str) -> Iterator[str]:
-    # Get absolute paths of both directories
-    dir_to_list = Path(parent_path, sub_path).resolve()
-    base_dir = Path(parent_path).resolve()
-    # List all files in dir_to_list and make paths relative to base_dir
-    for path in dir_to_list.rglob("*"):  # Match all files and directories
-        # Exclude hidden files/folders, 'venv', and '.egg-info' folders
-        if (
-            any(part.startswith(".") for part in path.parts)
-            or "venv" in path.parts  # Hidden files/folders
-            or any(  # Exclude 'venv'
-                part.endswith(".egg-info") for part in path.parts
-            )  # Exclude '.egg-info'
-        ):
-            continue
-        if path.is_file():  # Only yield files
-            yield str(path.relative_to(base_dir))
+# this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
+def _handle_errors(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except PermissionDenied:
+            logging.error(
+                "You do not have permission to create the requested resource. Please ask your admin to grant"
+                " you permission or choose an existing resource."
+            )
+            return func(*args, **kwargs)
+        except ResourceAlreadyExists:
+            logging.error(
+                "Resource already exists. Please choose an alternative resource."
+            )
+            return func(*args, **kwargs)
+        except BadRequest as e:
+            if "Cannot write secrets" in str(e):
+                logging.error(
+                    "Cannot write secrets to Azure KeyVault-backed scope. Please choose an alternative "
+                    "secret scope."
+                )
+                return func(*args, **kwargs)
+            else:
+                raise e
+
+    return wrapper
 
 
 class SetUpMigrationAssistant:
-    # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
-    def _handle_errors(func):
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except PermissionDenied:
-                logging.error(
-                    "You do not have permission to create the requested resource. Please ask your admin to grant"
-                    " you permission or choose an existing resource."
-                )
-                return func(*args, **kwargs)
-            except ResourceAlreadyExists:
-                logging.error(
-                    "Resource already exists. Please choose an alternative resource."
-                )
-                return func(*args, **kwargs)
-            except BadRequest as e:
-                if "Cannot write secrets" in str(e):
-                    logging.error(
-                        "Cannot write secrets to Azure KeyVault-backed scope. Please choose an alternative "
-                        "secret scope."
-                    )
-                    return func(*args, **kwargs)
-                else:
-                    raise e
+    def __init__(self, workspace_client: WorkspaceClient, p: Prompts):
+        self.app = None
+        self.w = workspace_client
+        self.config = {}
+        self.prompts = p
+        self.warehouse = None
 
-        return wrapper
+    def create_or_select(
+        self,
+        entity: str,
+        list_all: Callable[[], list[str]],
+        create: Callable[[str], None],
+        default: str,
+    ) -> str:
+        """
+        User choose a Entity that can be selected from existing ones or created new
+        """
+        create_new = (
+            self.prompts.choice(
+                f"Create a new {entity} or use existing?",
+                ["Create new", "Use existing"],
+            )
+            == "Create new"
+        )
+        if not create_new:
+            all_entities = list_all()
 
-    @_handle_errors
-    def set_up_cluster(self, config, w, p):
-        app_cluster_infra = AppServingClusterInfra(config, w, p)
-        logging.info("Choose or create app serving cluster")
-        app_cluster_infra.choose_serving_cluster()
-        return app_cluster_infra.config
+            choices = all_entities + ["Create a new one"]
 
-    @_handle_errors
-    def create_sql_warehouse(self, config, w, p):
-        sql_infra = SqlWarehouseInfra(config, w, p)
-        logging.info("Choose or create warehouse")
-        sql_infra.choose_compute()
-        return sql_infra.config
+            question = f"Choose a {entity}: please enter the number of the {entity} you would like to use."
+            choice = self.prompts.choice(question, choices, sort=False)
 
-    @_handle_errors
-    def setup_uc_infra(self, config, w, p, see):
-        uc_infra = UnityCatalogInfra(config, w, p, see)
-        logging.info("Choose or create catalog")
-        uc_infra.choose_UC_catalog()
-        logging.info("Choose or create schema")
-        uc_infra.create_schema()
-        logging.info("Create code intent table")
-        uc_infra.create_tables()
-        return uc_infra.config
+            if "Create a new one" in choice:
+                create_new = True
+            else:
+                return choice
+        if create_new:
+            new_name = self.prompts.question(f"Choose a {entity} name", default=default)
+
+            print(f"Creating a new {entity} {new_name}.")
+            create(new_name)
+            return new_name
 
     @_handle_errors
-    def setup_vs_infra(self, config, w, p):
-        vs_infra = VectorSearchInfra(config, w, p)
-        logging.info("Choose or create VS endpoint")
-        vs_infra.choose_VS_endpoint()
-        logging.info("Choose or create embedding model")
-        vs_infra.choose_embedding_model()
-        logging.info("Create VS index")
-        vs_infra.create_VS_index()
-        return vs_infra.config
+    def setup_warehouse(self):
+        """
+        User choose a warehouse which will be used for all migration assistant operations
+        """
 
-    # no need to handle errors, no user input
-    def setup_job(self, config, w):
-        job_infra = JobsInfra(config, w)
-        logging.info("Create transformation job")
-        job_infra.create_transformation_job()
-        return job_infra.config
+        def create(name: str):
+            self.w.warehouses.create_and_wait(
+                name=name,
+                cluster_size="2X-Small",
+                max_num_clusters=1,
+                enable_serverless_compute=True,
+                enable_photon=True,
+                warehouse_type=CreateWarehouseRequestWarehouseType.PRO,
+                auto_stop_mins=5,
+            )
+
+        def list_all():
+            return [x.name for x in self.w.warehouses.list()]
+
+        warehouse_name = self.create_or_select(
+            entity="warehouse",
+            list_all=list_all,
+            create=create,
+            default="sql_migration_assistant",
+        )
+        self.warehouse = [
+            x for x in self.w.warehouses.list() if x.name == warehouse_name
+        ][0]
+
+        # update config with user choice
+        self.config["WAREHOUSE_ID"] = self.warehouse.id
 
     @_handle_errors
-    def setup_chat_infra(self, config, w, p):
-        chat_infra = ChatInfra(config, w, p)
-        logging.info("Choose or create foundation model infra")
-        chat_infra.setup_foundation_model_infra()
-        return chat_infra.config
+    def setup_unity(self):
+        def _create_UC_catalog(name: str):
+            """Create a new Unity Catalog."""
+            self.w.catalogs.create(
+                name=name,
+                comment="Catalog for storing assets related to the SQL migration assistant.",
+            )
+
+        def _create_UC_schema(name: str):
+            """Create a new Unity Schema."""
+            self.w.schemas.create(
+                name=name,
+                catalog_name=self.config.get("CATALOG"),
+                comment="Schema for storing assets related to the SQL migration assistant.",
+            )
+
+        def _list_catalogs():
+            return [x.name for x in self.w.catalogs.list()]
+
+        def _list_schema():
+            return [x.name for x in self.w.schemas.list(self.config.get("CATALOG"))]
+
+        catalog = self.create_or_select(
+            "catalog",
+            _list_catalogs,
+            create=_create_UC_catalog,
+            default="sql_migration_assistant",
+        )
+        self.config["CATALOG"] = catalog
+
+        schema = self.create_or_select(
+            "schema",
+            _list_schema,
+            create=_create_UC_schema,
+            default="sql_migration_assistant",
+        )
+        self.config["SCHEMA"] = schema
 
     @_handle_errors
-    def setup_secrets_infra(self, config, w, p):
-        secrets_infra = SecretsInfra(config, w, p)
-        logging.info("Set up secret")
-        secrets_infra.create_secret_PAT()
-        return secrets_infra.config
+    def setup_app(self):
+        def create(name: str):
+            print("Creating new app")
+            self.w.apps.create_and_wait(app=App(name))
+            print("Created new app")
 
-    def update_config(self, w, config):
-        uploader = FileUploader(w)
-        config = uploader.update_config(config)
-        return config
+        def list_all():
+            return [x.name for x in self.w.apps.list()]
+
+        app_name = self.create_or_select(
+            entity="app",
+            list_all=list_all,
+            create=create,
+            default="sql-migration-assistant",
+        )
+        self.config["APP"] = app_name
+        self.app = self.w.apps.get(app_name)
+        self._set_permissions()
+
+    def _set_permissions(self):
+        try:
+            self.w.warehouses.update_permissions(
+                self.warehouse.id,
+                access_control_list=[
+                    *self.w.warehouses.get_permissions(
+                        self.warehouse.id
+                    ).access_control_list,
+                    WarehouseAccessControlRequest(
+                        service_principal_name=app.service_principal_name,
+                        permission_level=WarehousePermissionLevel.CAN_USE,
+                    ),
+                ],
+            )
+        except Exception as e:
+            logger.warning(
+                f"Could not set permissions for warehouse {self.warehouse.name}: and service_principal {self.app.service_principal_name}"
+            )
+        try:
+            con = get_db_connection(self.w.config.profile, self.warehouse.id)
+            cursor = con.cursor()
+            cursor.execute(
+                f"GRANT USE CATALOG ON CATALOG {self.config.get('CATALOG')} TO `{self.app.service_principal_client_id}`"
+            )
+            cursor.close()
+        except Exception as e:
+            logger.warning(
+                f"Could not set permissions for Catalog {self.config.get('CATALOG')}: and service_principal {self.app.service_principal_name}"
+            )
+        try:
+            con = get_db_connection(self.w.config.profile, self.warehouse.id)
+            cursor = con.cursor()
+            cursor.execute(
+                f"GRANT ALL PRIVILEGES ON SCHEMA {self.config.get('CATALOG')}.{self.config.get('SCHEMA')} TO `{self.app.service_principal_client_id}`"
+            )
+            cursor.close()
+        except Exception as e:
+            logger.warning(
+                f"Could not set permissions for Schema {self.config.get('CATALOG')}.{self.config.get('SCHEMA')}: and service_principal {self.app.service_principal_name}"
+            )
+
+    @_handle_errors
+    def setup_deployment_dir(self):
+        if self.app.default_source_code_path == "":
+            deployment_path = self.prompts.question(
+                "Choose a workspace directory to deploy the code",
+                default=f"/Workspace/Users/{self.w.current_user.me().user_name}/sql_migration_assistant",
+            )
+        else:
+            deployment_path = self.app.default_source_code_path
+        self.config["DEPLOYMENT_PATH"] = deployment_path
 
     def setup_migration_assistant(self, w, p):
         logging.info("Setting up infrastructure")
         print("\nSetting up infrastructure")
-        # create empty config dict to fill in
-        config = {}
-        ############################################################
-        logging.info("Choose or create cluster to host review app")
-        print("\nChoose or create cluster to host review app")
-        config = self.set_up_cluster(config, w, p)
 
         ############################################################
-        logging.info("***Choose a Databricks SQL Warehouse***")
-        print("\n***Choose a Databricks SQL Warehouse***")
-        config = self.create_sql_warehouse(config, w, p)
-        # create a StatementExecutionExt object to execute SQL commands with the warehouse just created / assigned
-        see = StatementExecutionExt(w, warehouse_id=config["DATABRICKS_WAREHOUSE_ID"])
+        print(
+            "\n***Choose a Databricks SQL Warehouse***\n"
+            "This warehouse will be used for all migration assistant operations, setup and ongoing."
+        )
+
+        self.setup_warehouse()
 
         ############################################################
         logging.info("Setting up Unity Catalog infrastructure")
         print("\nSetting up Unity Catalog infrastructure")
-        config = self.setup_uc_infra(config, w, p, see)
+        self.setup_unity()
 
         ############################################################
-        logging.info("Setting up Vector Search infrastructure")
-        print("\nSetting up Vector Search infrastructure")
-        config = self.setup_vs_infra(config, w, p)
+        logging.info("Setting up Databricks App")
+        print("\nSetting up Databricks App")
+        self.setup_app()
 
         ############################################################
-        logging.info("Setting up Chat infrastructure")
-        print("\nSetting up Chat infrastructure")
-        config = self.setup_chat_infra(config, w, p)
-
-        ############################################################
-        logging.info("Setting up secrets")
-        print("\nSetting up secrets")
-        config = self.setup_secrets_infra(config, w, p)
-
-        ############################################################
-        logging.info("Setting up job")
-        print("\nSetting up job")
-        config = self.setup_job(config, w)
+        logging.info("Setting up Deployment Directory")
+        print("\nSetting up Deployment Directory")
+        self.setup_deployment_dir()
 
         ############################################################
         logging.info("Infrastructure setup complete")
         print("\nInfrastructure setup complete")
 
-        config = self.update_config(w, config)
-        return config
-
-    def upload_files(self, w: WorkspaceClient, path):
-        # all this nastiness becomes unnecessary with lakehouse apps, or if we upload a whl it simplifies things.
-        # But for now, this is the way.
-        # TODO - MAKE THIS NICE!!
-        project_path = Path(path).parent.parent
-        files_to_upload = list_files_recursive(project_path, ".")
-
-        logging.info("Uploading files to workspace")
-        print("\nUploading files to workspace")
-        uploader = FileUploader(w)
-
-        def inner(f):
-            full_file_path = os.path.join(project_path, f)
-            logging.info(
-                f"Uploading {full_file_path} to {uploader.installer.install_folder()}/{f}"
-            )
-            uploader.upload(full_file_path, f)
-
-        for f in files_to_upload:
-            inner(f)
-
-    def launch_review_app(self, w, config):
-        logging.info(
-            "Launching review app, please wait. A URL will be provided when the app is ready..."
-        )
-        print(
-            "\nLaunching review app, please wait. A URL will be provided when the app is ready..."
-        )
-        app_runner = RunReviewApp(w, config)
-        app_runner.launch_review_app()
-
-    def check_cloud(self, w):
-        host = w.config.host
-        if "https://adb" in host:
-            pass
-        elif ".gcp.databricks" in host:
-            raise Exception("GCP is not supported")
-        else:
-            pass
+        return self.config
