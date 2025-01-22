@@ -33,4 +33,4 @@ root = ".."  # Specify the Git root directory
 relative_to = "pyproject.toml"  # Ensure paths are resolved relative to this file
 
 [project.scripts]
-sql-migration-assistant = "main:main"
+sql-migration-assistant = "sql_migration_assistant.main:main"

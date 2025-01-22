@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -44,6 +45,8 @@ def deploy(profile, **kwargs):
         config = yaml.safe_load(config_file)
         print(f"Loaded Config: {config}")
 
+    cleanup()
+
     subprocess.run(["python3", "-m", "build"])
     create_app_yml(config)
     create_requirements_txt()
@@ -61,6 +64,10 @@ def deploy(profile, **kwargs):
     )
     app = w.apps.get(config.get("APP"))
     print(f"App deployed. URL: {app.url} with result {deployment.status}")
+
+
+def cleanup():
+    shutil.rmtree("dist", ignore_errors=True)
 
 
 def create_app_yml(config):
