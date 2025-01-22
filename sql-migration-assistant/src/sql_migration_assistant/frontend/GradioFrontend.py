@@ -21,7 +21,10 @@ from sql_migration_assistant.frontend.callbacks import (
     write_adhoc_to_workspace,
 )
 
-config = get_config()
+try:
+    config = get_config()
+except Exception as e:
+    print(f"Error loading config: {e}")
 
 
 class GradioFrontend:

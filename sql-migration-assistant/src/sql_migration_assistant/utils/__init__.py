@@ -1,4 +1,5 @@
 import logging
+import sys
 from logging import StreamHandler
 
 from databricks import sql
@@ -8,7 +9,11 @@ from importlib.metadata import version
 
 logger = logging.getLogger("sql_migration_assistant")
 logger.setLevel(logging.INFO)
-logger.addHandler(StreamHandler())
+console_handler = StreamHandler(sys.stdout)
+console_handler.setFormatter(
+    logging.Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s")
+)
+logger.addHandler(console_handler)
 
 
 def get_workspace_client(profile: str) -> WorkspaceClient:

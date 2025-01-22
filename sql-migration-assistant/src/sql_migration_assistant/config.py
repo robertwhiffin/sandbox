@@ -11,8 +11,6 @@ from sql_migration_assistant.utils import (
     get_db_connection,
 )
 
-yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
-
 
 class Config:
     config: dict = {
@@ -71,11 +69,6 @@ class Config:
     def from_environ(self):
         for key in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
             self.config[key] = os.environ.get(key)
-
-    def from_yaml(self):
-        with open(yaml_path, "r") as f:
-            content = yaml.safe_load(f)
-        self.config = {**self.config, **content}
 
     def set_config(self, key, value):
         logger.info(f"Setting Config {key} to {value}")

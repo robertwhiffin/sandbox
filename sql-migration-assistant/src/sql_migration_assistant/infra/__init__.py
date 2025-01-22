@@ -1,9 +1,12 @@
+import os
 import subprocess
 from pathlib import Path
 
 import yaml
 from databricks.labs.blueprint.tui import Prompts
+from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.apps import AppDeployment
+from databricks.sdk.service.workspace import ImportFormat
 
 from sql_migration_assistant.utils import get_workspace_client
 from sql_migration_assistant.utils.initialsetup import SetUpMigrationAssistant
@@ -41,22 +44,15 @@ def deploy(profile, **kwargs):
         config = yaml.safe_load(config_file)
         print(f"Loaded Config: {config}")
 
+    subprocess.run(["python3", "-m", "build"])
     create_app_yml(config)
+    create_requirements_txt()
 
     w = get_workspace_client(kwargs.get("profile"))
 
     deployment_path = config.get("DEPLOYMENT_PATH")
 
-    subprocess.run(
-        [
-            "databricks",
-            "sync",
-            project_dir_resolved,
-            deployment_path,
-            "--profile",
-            profile,
-        ]
-    )
+    upload_data(w, deployment_path)
 
     print("Deploying app")
     deployment = w.apps.deploy_and_wait(
@@ -69,8 +65,21 @@ def deploy(profile, **kwargs):
 
 def create_app_yml(config):
     content = {
-        "command": ["python", "src/sql_migration_assistant/main.py"],
+        "command": ["sql-migration-assistant"],
         "env": [{"name": key, "value": value} for key, value in config.items()],
     }
-    with open("app.yml", "w") as file:
+    with open("dist/app.yml", "w") as file:
         yaml.dump(content, file)
+
+
+def create_requirements_txt():
+    with open("dist/requirements.txt", "w") as file:
+        file.write([x for x in os.listdir("dist") if x.endswith(".whl")][0])
+
+
+def upload_data(w: WorkspaceClient, deployment_path):
+    for f in os.listdir("dist"):
+        with open(f"dist/{f}", "rb") as file:
+            w.workspace.upload(
+                f"{deployment_path}/{f}", file, format=ImportFormat.RAW, overwrite=True
+            )

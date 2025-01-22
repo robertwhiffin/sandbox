@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "setuptools-scm", "wheel"]
+requires = ["setuptools>=42", "setuptools-scm", "wheel", "build"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -31,3 +31,6 @@ include-package-data = true
 [tool.setuptools_scm]
 root = ".."  # Specify the Git root directory
 relative_to = "pyproject.toml"  # Ensure paths are resolved relative to this file
+
+[project.scripts]
+sql-migration-assistant = "main:main"

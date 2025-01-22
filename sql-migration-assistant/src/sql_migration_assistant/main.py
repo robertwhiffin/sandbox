@@ -13,9 +13,15 @@ print(module_dir)
 
 
 def main():
+    from sql_migration_assistant.utils import logger
+
+    logger.info("Starting sql-migration assistant")
     from sql_migration_assistant.frontend.GradioFrontend import GradioFrontend
 
-    print(version("sql_migration_assistant"))
+    try:
+        logger.info(f"Version: {version('sql_migration_assistant')}")
+    except Exception as e:
+        logger.error(e)
 
     frontend = GradioFrontend()
     frontend.app.launch(
