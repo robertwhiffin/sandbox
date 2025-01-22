@@ -1,8 +1,6 @@
 import os
-from pathlib import Path
 
 import pandas as pd
-import yaml
 from databricks.sdk.errors import NotFound
 
 from sql_migration_assistant.utils import (

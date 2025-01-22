@@ -1,6 +1,5 @@
 import logging
-
-from typing import Iterator, Callable
+from typing import Callable
 
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient

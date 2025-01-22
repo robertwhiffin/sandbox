@@ -12,7 +12,6 @@ from databricks.sdk.service.vectorsearch import (
     EmbeddingSourceColumn,
     VectorIndexType,
 )
-
 from sql_migration_assistant.utils.uc_model_version import get_latest_model_version
 
 

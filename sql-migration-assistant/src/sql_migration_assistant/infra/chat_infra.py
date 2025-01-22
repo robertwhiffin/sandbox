@@ -2,7 +2,6 @@ import logging
 
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
-
 from sql_migration_assistant.utils.uc_model_version import get_latest_model_version
 
 

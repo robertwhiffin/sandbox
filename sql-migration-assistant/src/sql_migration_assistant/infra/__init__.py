@@ -8,9 +8,9 @@ from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.apps import AppDeployment
 from databricks.sdk.service.workspace import ImportFormat
+from sql_migration_assistant.utils.initialsetup import SetUpMigrationAssistant
 
 from sql_migration_assistant.utils import get_workspace_client
-from sql_migration_assistant.utils.initialsetup import SetUpMigrationAssistant
 
 
 def init(profile, **kwargs):
