@@ -29,35 +29,29 @@ customise the application to their needs and entirely own the IP.
 
 ## Deployment
 ### 0. Initial Setup
-- Clone the repo
-- Install the module with dependencies 
-```shell
-pip install -e .
-```
-- Configure the databricks cli 
+Setting Legion up is a simple and automated process. Ensure you have the [Databricks CLI]
+(https://docs.databricks.com/en/dev-tools/cli/index.html) installed and configured with the correct workspace.
 
-### 2. Set basic configurations
-To get started copy config_template.yml as config.yml and fill out the needed values. These are:  
-- CATALOG: A Catalog used to store the data of the app.
-- SCHEMA: A schema within the catalog for storing the data. You should have Manage Permissions on it.
-- SQL_WAREHOUSE_NAME: The name of a warehouse to use. You should have at least CAN_USE permissions (MANAGE is better)
-- DEPLOYMENT_MODE: This states how the app is deployed. Currently just 'app' is supported for deploying as databricks app
-- APP_NAME: The name of the databricks app. This will be created if it does not yet exists.
-- DEPLOYMENT_PATH: A path in the Databricks Workspace used for source code. 
-
-### 3. Run deployment command
-Run the command 
+Once the Databricks CLI has been installed and configured, run the following command to install the Databricks Labs 
+Sandbox and the SQL Migration Assistant.
 ```bash
-python deploy.py 
+databricks labs install sandbox && databricks labs sandbox sql-migration-assistant
 ```
-If you want to use non-default values you can also use 
-```bash
-python deploy.py --profile <your-databricks-profile> --project-dir <path-to-project-root> --config-path <path-to-config-yml>
-```
-This will deploy the app and create all needed resources with it.
-### 4. Update Deployment
-To update the deployment just run the deployment again with your updated code and config.
+This will guide you through the initial setup and deploy the app in your workspace. In detail this runs the following
+subcommands:
+- *init*: this will guide you through the configuration and creation of the resources needed to deploy the sql-migration-assistant.
+As a result this will create and populate the file *config.yml*
+- *deploy*: this builds the project as a whl file uploads it to the deployment directory and deploys it to the configured web app
 
+### 1. Update Configuration or deployment
+To update the initial configuration or rerun the deployment you can run both commands independently
+```bash
+databricks labs sandbox sql-migration-assistant --command=init
+```
+```bash
+databricks labs sandbox sql-migration-assistant --command=deploy
+```
+**Note:** Deploying a new code version only works if you are on a different git commit than the previous version.
 ## Contributing
 
 ### Set Up Development environment
