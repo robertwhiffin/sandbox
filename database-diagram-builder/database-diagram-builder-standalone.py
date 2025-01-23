@@ -138,7 +138,7 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
                         for cl in cols:
                             col_name = cl.name
                             column_names.append(col_name)
-                            schema = spark.createDataFrame([], cl.dataType).catalog_schema[0]
+                            schema = spark.createDataFrame([], cl.dataType).schema[0]
                             is_partition = cl.isPartition
                             if is_partition:
                                 if col_name in partition_keys:
