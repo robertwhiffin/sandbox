@@ -25,6 +25,7 @@ class Config:
         "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
         "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
+        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant",
         "INSTRUCTIONS_TABLE_NAME": "sql_migration_assistant_instructions",
     }
 
@@ -125,7 +126,7 @@ class Config:
         ]
         if len(warehouses) == 0:
             errors.append(
-                f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} found. Please create it before deployment"
+                f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} not found. Please create it before deployment"
             )
         else:
             self.warehouse = warehouses[0]
