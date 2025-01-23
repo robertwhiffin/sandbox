@@ -11,7 +11,8 @@ from databricks.sdk.service.sql import (
     WarehousePermissionLevel,
 )
 
-from sql_migration_assistant.utils import logger, get_db_connection
+from sql_migration_assistant.utils import logger
+from sql_migration_assistant.utils.storage import get_db_connection
 from sql_migration_assistant.version import __version__
 
 import argparse

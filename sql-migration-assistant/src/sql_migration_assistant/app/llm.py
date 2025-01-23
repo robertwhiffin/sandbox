@@ -40,7 +40,7 @@ class LLMCalls:
 
     # this is called to actually send a request and receive response from the llm endpoint.
 
-    def llm_translate(
+    def llm_invoke(
         self, system_prompt, input_code, model_name, max_tokens, temperature
     ):
         messages = [
@@ -58,22 +58,3 @@ class LLMCalls:
 
         translation = llm_answer
         return translation
-
-    def llm_intent(
-        self, system_prompt, input_code, model_name, max_tokens, temperature
-    ):
-        messages = [
-            ChatMessage(role=ChatMessageRole("system"), content=system_prompt),
-            ChatMessage(role=ChatMessageRole("user"), content=input_code),
-        ]
-
-        # call the LLM end point.
-        llm_answer = self.call_llm(
-            messages=messages,
-            model_name=model_name,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-
-        intend = llm_answer
-        return intend
