@@ -5,21 +5,24 @@ import os
 
 import databricks.sdk.errors.platform
 import gradio as gr
+import pandas as pd
 from databricks.sdk.service.workspace import ImportFormat, Language
 
 from sql_migration_assistant.app.llm import LLMCalls
-from sql_migration_assistant.app.prompt_helper import PromptHelper
 from sql_migration_assistant.app.similar_code import SimilarCode
 from sql_migration_assistant.config import get_config
+from sql_migration_assistant.utils.storage import (
+    create_if_not_exists,
+    insert,
+    read,
+)
 
 config = get_config()
 w = config.w
 
 llm = LLMCalls(w)
 
-prompt_helper = PromptHelper(
-    catalog_schema=config.catalog_schema, prompt_table=config.get("PROMPT_TABLE")
-)
+
 similar_code_helper = SimilarCode(
     workspace_client=w,
     catalog_schema=config.catalog_schema,
@@ -47,22 +50,54 @@ def read_code_file(volume_path, file_name):
     return code
 
 
-def llm_intent_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
+def llm_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
     model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    intent = llm.llm_intent(
+    intent = llm.llm_invoke(
         system_prompt, input_code, model_name, max_tokens, temperature
     )
     return intent
 
 
-def llm_translate_wrapper(
-    system_prompt, input_code, model_name, max_tokens, temperature
+def save_instruction(
+    name: str,
+    endpoint: str,
+    temperature: float,
+    max_tokens: int,
+    system_prompt: str,
+    instruction_type: str,
 ):
-    model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    translated_code = llm.llm_translate(
-        system_prompt, input_code, model_name, max_tokens, temperature
+    create_if_not_exists(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
     )
-    return translated_code
+    insert(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        [
+            {
+                "name": name,
+                "description": "",
+                "instruction_type": instruction_type,
+                "endpoint": endpoint,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "system_prompt": system_prompt,
+            }
+        ],
+        keys=["name", "instruction_type"],
+        upsert=True,
+    )
+    gr.Info("Configuration Saved")
+
+
+def load_instructions(instruction_type: str, name: str = None) -> pd.DataFrame:
+    create_if_not_exists(
+        config.get("INSTRUCTIONS_TABLE_NAME"),
+        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
+    )
+    where = f"instruction_type = '{instruction_type}'" + (
+        "" if name is None else f" AND name = '{name}'"
+    )
+    return read(config.get("INSTRUCTIONS_TABLE_NAME"), where=where)
 
 
 def produce_preview(explanation, translated_code, similar_code_notebook_url):
