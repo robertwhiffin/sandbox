@@ -32,8 +32,14 @@ customise the application to their needs and entirely own the IP.
 Setting Legion up is a simple and automated process. Ensure you have the [Databricks CLI]
 (https://docs.databricks.com/en/dev-tools/cli/index.html) installed and configured with the correct workspace.
 
-Once the Databricks CLI has been installed and configured, run the following command to install the Databricks Labs 
+Once the Databricks CLI has been installed and configured, install the sql-migration-assistant (make sure you run it
+in the directory sql-migration-assistant:
+```bash
+pip install -e .
+```
+Last run the following command to install the Databricks Labs 
 Sandbox and the SQL Migration Assistant.
+
 ```bash
 databricks labs install sandbox && databricks labs sandbox sql-migration-assistant
 ```
