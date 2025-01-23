@@ -22,7 +22,10 @@ from sql_migration_assistant.frontend.callbacks import (
     write_adhoc_to_workspace,
 )
 
-config = get_config()
+try:
+    config = get_config()
+except Exception as e:
+    print(f"Error loading config: {e}")
 
 current_folder = Path(__file__).parent.resolve()
 
@@ -138,7 +141,6 @@ class GradioFrontend:
             self.app.load()
 
     def add_logic_loading_batch_mode(self):
-
         def read_code_file_inner(volume_path, file_name):
             code = read_code_file(volume_path, file_name)
             return [code] * len(self.code_input_objects)
@@ -153,7 +155,6 @@ class GradioFrontend:
         )
 
     def add_logic_loading_interactive_mode(self):
-
         def update_code(code):
             return [code] * len(self.code_input_objects)
 

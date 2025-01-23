@@ -19,9 +19,6 @@ commands:
   - name: sql-migration-assistant
     description: "GenAI enabled SQL Migration tool"
     flags:
-      - name: json_file
-        description: "Optional JSON file with dump of IP Access Lists"
-        default: ''
-      - name: apply
-        description: "If script should do the changes"
-        default: false
+      - name: commands
+        description: "Optional list of subcommands to execute, could be 'init','deploy','all'. Defaults to 'all'"
+        default: 'all'

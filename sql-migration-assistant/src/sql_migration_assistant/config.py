@@ -1,7 +1,5 @@
 import os
-from pathlib import Path
 
-import yaml
 from databricks.sdk.errors import NotFound
 
 from sql_migration_assistant.utils import (
@@ -15,8 +13,6 @@ from sql_migration_assistant.utils.storage import (
     insert,
     read,
 )
-
-yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 
 class Config:
@@ -64,13 +60,8 @@ class Config:
                 self.config[row["key"]] = row["value"]
 
     def from_environ(self):
-        for key in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
+        for key in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
             self.config[key] = os.environ.get(key)
-
-    def from_yaml(self):
-        with open(yaml_path, "r") as f:
-            content = yaml.safe_load(f)
-        self.config = {**self.config, **content}
 
     def set_config(self, key, value):
         logger.info(f"Setting Config {key} to {value}")
@@ -99,7 +90,7 @@ class Config:
     def validate_first_setup(self):
         """Validate the initial configuration"""
         errors = []
-        for k in ["CATALOG", "SCHEMA", "SQL_WAREHOUSE_NAME"]:
+        for k in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
             errors.extend(self.validate_key_exists(k))
 
         if self.config.get("DEPLOYMENT_MODE") == "app":
@@ -112,23 +103,18 @@ class Config:
                 f"Catalog {self.catalog} does not exist. Please create it before deployment"
             )
         try:
-            self.w.schemas.get(self.schema)
+            self.w.schemas.get(self.catalog_schema)
         except NotFound:
             errors.append(
-                f"Schema {self.schema} does not exist. Please create it before deployment"
+                f"Schema {self.catalog_schema} does not exist. Please create it before deployment"
             )
 
-        warehouses = [
-            w
-            for w in self.w.warehouses.list()
-            if w.name == self.config.get("SQL_WAREHOUSE_NAME")
-        ]
-        if len(warehouses) == 0:
+        try:
+            self.warehouse = self.w.warehouses.get(self.get("WAREHOUSE_ID"))
+        except NotFound:
             errors.append(
-                f"Warehouse {self.config.get('SQL_WAREHOUSE_NAME')} not found. Please create it before deployment"
+                f"Warehouse {self.config.get('WAREHOUSE_ID')} not found. Please create it before deployment"
             )
-        else:
-            self.warehouse = warehouses[0]
         if len(errors) > 0:
             raise Exception(
                 f"Initial Configuration not valid. Please fix the following errors:"

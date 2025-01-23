@@ -11,8 +11,12 @@ def ip_access_list_analyzer(**args):
     analyzer.main(args)
 
 def sql_migration_assistant(**kwargs):
-    from sql_migration_assistant import install_migration_assistant
-    install_migration_assistant(**kwargs)
+    from sql_migration_assistant.infra import init, deploy
+    profile = kwargs.get("profile", "DEFAULT")
+    if kwargs.get("commands") in ("init", "all"):
+        init(profile, **kwargs)
+    if kwargs.get("commands") in ("deploy", "all"):
+        deploy(profile, **kwargs)
 
 MAPPING = {
     "ip-access-list-analyzer": ip_access_list_analyzer,

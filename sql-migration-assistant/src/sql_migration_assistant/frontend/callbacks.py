@@ -25,7 +25,7 @@ llm = LLMCalls(w)
 
 similar_code_helper = SimilarCode(
     workspace_client=w,
-    schema=config.schema,
+    catalog_schema=config.catalog_schema,
     code_intent_table_name=config.get("CODE_INTENT_TABLE_NAME"),
     VS_index_name=config.get("VS_INDEX_NAME"),
     VS_endpoint_name=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
@@ -149,17 +149,14 @@ TRANSLATED_CODE_GOES_HERE
 
 
 def write_adhoc_to_workspace(
-        folder_name,
-        file_name,
-        overwrite,
-        preview,
-        input_code,
-        explained
+    folder_name, file_name, overwrite, preview, input_code, explained
 ):
     if len(file_name) == 0:
         raise gr.Error("Please provide a filename")
     WORKSPACE_LOCATION = config.get("WORKSPACE_OUTPUT_PATH_ROOT")
-    notebook_path_root = f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{folder_name}"
+    notebook_path_root = (
+        f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{folder_name}"
+    )
     notebook_path = f"{notebook_path_root}/{file_name}"
     content = preview
     w.workspace.mkdirs(notebook_path_root)
@@ -172,7 +169,9 @@ def write_adhoc_to_workspace(
             overwrite=overwrite,
         )
     except databricks.sdk.errors.platform.ResourceAlreadyExists:
-        gr.Error(f"Notebook **{file_name}** already exists. Please check the overwrite box if you want to overwrite the file.")
+        gr.Error(
+            f"Notebook **{file_name}** already exists. Please check the overwrite box if you want to overwrite the file."
+        )
 
     _ = w.workspace.get_status(notebook_path)
     id = _.object_id
