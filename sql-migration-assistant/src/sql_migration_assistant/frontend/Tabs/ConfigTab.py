@@ -52,7 +52,7 @@ class ConfigTab:
             self.prompt_tabel_name_box = gr.Textbox(
                 label="Intent Table",
                 interactive=True,
-                value=config.get("PROMPT_TABLE"),
+                value=config.get("INSTRUCTIONS_TABLE_NAME"),
             )
 
             self.vector_search_index_box = gr.Textbox(
@@ -72,7 +72,7 @@ class ConfigTab:
                         "VECTOR_SEARCH_ENDPOINT_NAME": b,
                         "VOLUME": c,
                         "CODE_INTENT_TABLE_NAME": x,
-                        "PROMPT_TABLE": y,
+                        "INSTRUCTIONS_TABLE_NAME": y,
                         "VS_INDEX_NAME": z,
                     }
                 )
@@ -120,7 +120,7 @@ class ConfigTab:
                         ],
                     ),
                     gr.update(value=config.get("CODE_INTENT_TABLE_NAME")),
-                    gr.update(value=config.get("PROMPT_TABLE")),
+                    gr.update(value=config.get("INSTRUCTIONS_TABLE_NAME")),
                     gr.update(value=config.get("VS_INDEX_NAME")),
                 ],
                 outputs=[

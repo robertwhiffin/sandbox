@@ -21,7 +21,6 @@ yaml_path = Path(__file__).parent.parent.parent.resolve() / "config.yml"
 
 class Config:
     config: dict = {
-        "PROMPT_TABLE": "sql_migration_assistant_prompts",
         "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
         "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",

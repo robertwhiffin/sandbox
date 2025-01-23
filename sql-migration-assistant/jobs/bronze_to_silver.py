@@ -41,7 +41,7 @@ spark.sql(
 )
 
 bronze_prompt_config = (
-    f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_prompt_config'
+    f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_configs["INSTRUCTIONS_TABLE_NAME"]}'
 )
 spark.sql(
     f"""
