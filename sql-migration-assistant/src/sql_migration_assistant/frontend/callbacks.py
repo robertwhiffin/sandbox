@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 
+import databricks.sdk.errors.platform
 import gradio as gr
 from databricks.sdk.service.workspace import ImportFormat, Language
 
@@ -112,25 +113,35 @@ TRANSLATED_CODE_GOES_HERE
         return preview_code
 
 
-def write_adhoc_to_workspace(file_name, preview, input_code, explained):
+def write_adhoc_to_workspace(
+    folder_name, file_name, overwrite, preview, input_code, explained
+):
     if len(file_name) == 0:
         raise gr.Error("Please provide a filename")
-    WORKSPACE_LOCATION = config.get_workspace_path()
-    notebook_path_root = f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{str(datetime.datetime.now().date()).replace(':', '_')}"
+    WORKSPACE_LOCATION = config.get("WORKSPACE_OUTPUT_PATH_ROOT")
+    notebook_path_root = (
+        f"{WORKSPACE_LOCATION}/outputNotebooks/manuallyTranslated/{folder_name}"
+    )
     notebook_path = f"{notebook_path_root}/{file_name}"
     content = preview
     w.workspace.mkdirs(notebook_path_root)
-    w.workspace.import_(
-        content=base64.b64encode(content.encode("utf-8")).decode("utf-8"),
-        path=notebook_path,
-        format=ImportFormat.SOURCE,
-        language=Language.SQL,
-        overwrite=True,
-    )
+    try:
+        w.workspace.import_(
+            content=base64.b64encode(content.encode("utf-8")).decode("utf-8"),
+            path=notebook_path,
+            format=ImportFormat.SOURCE,
+            language=Language.SQL,
+            overwrite=overwrite,
+        )
+    except databricks.sdk.errors.platform.ResourceAlreadyExists:
+        gr.Error(
+            f"Notebook **{file_name}** already exists. Please check the overwrite box if you want to overwrite the file."
+        )
+
     _ = w.workspace.get_status(notebook_path)
     id = _.object_id
     url = f"{w.config.host}/#notebook/{id}"
-    output_message = f"Notebook {file_name} written to Databricks [here]({url})"
+    output_message = f"Notebook **{file_name}** written to Databricks [here]({url})"
 
     # save the intent at the same time
     if explained:
@@ -171,7 +182,7 @@ def execute_workflow(
             }
         ],
     ]
-    WORKSPACE_LOCATION = config.get_workspace_path()
+    WORKSPACE_LOCATION = config.get("WORKSPACE_OUTPUT_PATH_ROOT")
 
     app_config_payload = {
         "VOLUME_NAME_OUTPUT_PATH": config.get("VOLUME_NAME_OUTPUT_PATH"),

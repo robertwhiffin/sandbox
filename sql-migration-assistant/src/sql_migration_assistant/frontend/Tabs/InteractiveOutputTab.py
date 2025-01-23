@@ -37,12 +37,14 @@ class InteractiveOutputTab:
             # function
             self.hidden_url_textbox = gr.Textbox(visible=False)
             with gr.Row():
+                self.folder_name = gr.Textbox(label="Folder name")
+                self.file_name = gr.Textbox(label="Notebook filename")
+                self.overwrite_checkbox = gr.Checkbox(label="Overwrite existing file")
+            with gr.Row():
                 self.produce_preview_button = gr.Button("Produce Preview")
-                with gr.Column():
-                    self.file_name = gr.Textbox(label="Filename for the notebook")
-                    self.write_to_workspace_button = gr.Button("Write to Workspace")
-                    self.adhoc_write_output = gr.Markdown(
-                        label="Notebook output location"
-                    )
+                self.write_to_workspace_button = gr.Button("Write to Workspace")
+                self.adhoc_write_output = gr.Markdown(
+                    label="Notebook output location"
+                )
 
             self.preview = gr.Code(label="Preview", language="python")

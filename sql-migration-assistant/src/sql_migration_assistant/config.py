@@ -16,6 +16,7 @@ class Config:
         "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
         "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
         "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
+        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant",
     }
 
     def __init__(self, profile=None):
@@ -116,7 +117,7 @@ class Config:
             self.warehouse = self.w.warehouses.get(self.get("WAREHOUSE_ID"))
         except NotFound:
             errors.append(
-                f"Warehouse {self.config.get('WAREHOUSE_ID')} found. Please create it before deployment"
+                f"Warehouse {self.config.get('WAREHOUSE_ID')} not found. Please create it before deployment"
             )
         if len(errors) > 0:
             raise Exception(

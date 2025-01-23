@@ -22,7 +22,7 @@ class BatchOutputTab:
                 This will kick off a Workflow which will ingest the code files, write them to a Delta Table, apply the AI
                 agents, and output a Databricks Notebook per input code file. This notebook will have the intent at the top 
                 of the notebook in a markdown cell, and the translated code in the cell below. These notebooks are found in 
-                the workspace at {config.get_workspace_path()}/outputNotebooks* and in the *Output Code* folder in the UC Volume
+                the workspace at {config.get("WORKSPACE_OUTPUT_PATH_ROOT")}/outputNotebooks* and in the *Output Code* folder in the UC Volume
                 
                 The intent will also be stored in a Unity Catalog table and vector search index for finding similar code. 
                 """
