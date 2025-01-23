@@ -232,7 +232,7 @@ class SetUpMigrationAssistant:
             deployment_path = self.app.default_source_code_path
         self.config["DEPLOYMENT_PATH"] = deployment_path
 
-    def setup_migration_assistant(self, w, p):
+    def setup_migration_assistant(self):
         logging.info("Setting up infrastructure")
         print("\nSetting up infrastructure")
 

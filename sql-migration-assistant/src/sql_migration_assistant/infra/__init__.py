@@ -8,7 +8,7 @@ from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.apps import AppDeployment
 from databricks.sdk.service.workspace import ImportFormat
-from sql_migration_assistant.utils.initialsetup import SetUpMigrationAssistant
+from sql_migration_assistant.infra.initialsetup import SetUpMigrationAssistant
 
 from sql_migration_assistant.utils import get_workspace_client
 
@@ -17,7 +17,7 @@ def init(profile, **kwargs):
     w = get_workspace_client(profile)
     p = Prompts()
     setter_upper = SetUpMigrationAssistant(w, p)
-    final_config = setter_upper.setup_migration_assistant(w, p)
+    final_config = setter_upper.setup_migration_assistant()
     project_path = Path(__file__).parent.parent.parent.parent.resolve()
     local_config = str(project_path) + "/config.yml"
     with open(local_config, "w") as f:
