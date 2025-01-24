@@ -189,7 +189,7 @@ class SetUpMigrationAssistant:
         def _create_tables():
             #TODO move this table name / table schema somewhere else?
             tables = {
-                "sql_migration_assistant_code_intent" : f"(id BIGINT, code STRING, intent STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+                "sql_migration_assistant_code_intent" : f"(id BIGINT, code STRING, intent STRING, url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
             }
 
             for table_name, table_spec in tables.items():
