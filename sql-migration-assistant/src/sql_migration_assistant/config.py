@@ -18,8 +18,7 @@ from sql_migration_assistant.utils.storage import (
 class Config:
     config: dict = {
         "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
-        "CODE_INTENT_TABLE_NAME": "sql_migration_assistant_code_intent",
-        "VS_INDEX_NAME": "sql_migration_assistant_code_intent_vs_index",
+
         "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant",
         "INSTRUCTIONS_TABLE_NAME": "sql_migration_assistant_instructions",
     }

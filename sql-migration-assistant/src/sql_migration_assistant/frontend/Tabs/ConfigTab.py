@@ -90,8 +90,8 @@ class ConfigTab:
             self.save_config.click(
                 set_configs,
                 inputs=[
-                    self.embedding_model_endpoint_dropdown,
-                    self.vector_search_dropdown,
+                   # self.embedding_model_endpoint_dropdown,
+                   # self.vector_search_dropdown,
                     self.volume_dropdown,
                     self.default_llm_dropdown,
                     self.intent_tabel_name_box,
@@ -131,8 +131,8 @@ class ConfigTab:
                     gr.update(value=config.get("VS_INDEX_NAME")),
                 ],
                 outputs=[
-                    self.embedding_model_endpoint_dropdown,
-                    self.vector_search_dropdown,
+                   # self.embedding_model_endpoint_dropdown,
+                   # self.vector_search_dropdown,
                     self.volume_dropdown,
                     self.intent_tabel_name_box,
                     self.prompt_tabel_name_box,

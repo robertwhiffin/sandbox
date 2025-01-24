@@ -15,7 +15,7 @@ from databricks.sdk.service.catalog import VolumeType
 from databricks.sdk.service.workspace import ObjectType, WorkspaceObjectAccessControlRequest, WorkspaceObjectPermissionLevel
 
 from sql_migration_assistant.utils import logger
-from sql_migration_assistant.utils.storage import get_db_connection
+from sql_migration_assistant.utils.storage import get_db_connection, execute_query
 
 from databricks.sdk.errors.platform import ResourceAlreadyExists, NotFound
 from databricks.sdk.service.vectorsearch import (
@@ -187,19 +187,18 @@ class SetUpMigrationAssistant:
                 self.w.dbutils.fs.mkdirs(volume_path)
 
         def _create_tables():
+            #TODO move this table name / table schema somewhere else?
             tables = {
-            self.config.get("CODE_INTENT_TABLE_NAME") : f"(id BIGINT, code STRING, intent STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+                "sql_migration_assistant_code_intent" : f"(id BIGINT, code STRING, intent STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
             }
-            con = get_db_connection(self.w.config.profile, self.warehouse.id)
-            cursor = con.cursor()
+
             for table_name, table_spec in tables.items():
-                FQN = f"{self.config.get('CATALOG')}.{self.config.get('SCHEMA')}.{table_name}"
-                cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `{FQN}` {table_spec}"
+                self.w.statement_execution.execute_statement(
+                    statement=f"CREATE TABLE IF NOT EXISTS `{table_name}` {table_spec}"
+                    ,catalog=self.config.get('CATALOG')
+                    ,schema=self.config.get('SCHEMA')
+                    ,warehouse_id=self.config.get('WAREHOUSE_ID')
                 )
-
-            cursor.close()
-
 
         def _list_catalogs():
             return [x.name for x in self.w.catalogs.list()]
@@ -239,8 +238,9 @@ class SetUpMigrationAssistant:
             volume_path = f"/Volumes/{self.config.get('CATALOG')}/{self.config.get('SCHEMA')}/{volume}/{dir_}"
             self.config[f"VOLUME_NAME_{key.upper()}_PATH"] = volume_path
 
+        # TODO - this shouldnt be hardcoded, but should be a part of the config
         _create_tables()
-
+        self.config["CODE_INTENT_TABLE_NAME"] = "sql_migration_assistant_code_intent"
     @_handle_errors
     def setup_app(self):
         def create(name: str):
@@ -273,12 +273,12 @@ class SetUpMigrationAssistant:
         def _create_VS_index():
             try:
                 self.w.vector_search_indexes.create_index(
-                    name=self.config.get("VS_INDEX_NAME"),
+                    name=f'{self.config.get("CATALOG")}.{self.config.get("SCHEMA")}.{self.config.get("VS_INDEX_NAME")}',
                     endpoint_name=self.config.get("VS_ENDPOINT_NAME"),
                     primary_key="id",
                     index_type=VectorIndexType.DELTA_SYNC,
                     delta_sync_index_spec=DeltaSyncVectorIndexSpecRequest(
-                        source_table=self.config.get("CODE_INTENT_TABLE_NAME"),
+                        source_table=f'{self.config.get("CATALOG")}.{self.config.get("SCHEMA")}.{self.config.get("CODE_INTENT_TABLE_NAME")}',
                         pipeline_type=PipelineType.TRIGGERED,
                         embedding_source_columns=[
                             EmbeddingSourceColumn(
@@ -296,13 +296,15 @@ class SetUpMigrationAssistant:
                 raise e
 
         def _list_vs_endpoints():
-            return [x.name for x in self.w.vector_search_endpoints.list_endpoints()]
+            all_endpoints = list(self.w.vector_search_endpoints.list_endpoints())
+            available_endpoints = [x.name for x in all_endpoints if x.num_indexes < 50]
+            return available_endpoints
 
         def _list_embedding_models():
             return [e.name for e in self.w.serving_endpoints.list() if e.task and "embedding" in e.task]
 
         endpoint = self.create_or_select(
-            entity="Vector Search endpoint",
+            entity="Vector Search endpoint with less than 50 indices",
             list_all=_list_vs_endpoints,
             create=_create_VS_endpoint,
             default="sql_migration_assistant_vs_endpoint",
@@ -315,6 +317,7 @@ class SetUpMigrationAssistant:
         )
         self.config["EMBEDDING_MODEL_ENDPOINT"] = embedding_model
 
+        self.config["VS_INDEX_NAME"]= "sql_migration_assistant_code_intent_vs_index"
         _create_VS_index()
 
     @_handle_errors
@@ -360,11 +363,26 @@ class SetUpMigrationAssistant:
                 f"Could not set permissions for Schema {self.config.get('CATALOG')}.{self.config.get('SCHEMA')}: and service_principal {self.app.service_principal_name}"
             )
             logger.warning(e)
+
+
+    @_handle_errors
+    def setup_deployment_dir(self):
+        if self.app.default_source_code_path == "":
+            deployment_path = self.prompts.question(
+                "Choose a workspace directory to deploy the code",
+                default=f"/Workspace/Users/{self.w.current_user.me().user_name}/sql_migration_assistant",
+            )
+        else:
+            deployment_path = self.app.default_source_code_path
+        self.config["DEPLOYMENT_PATH"] = deployment_path
+
+        self.w.workspace.mkdirs(deployment_path)
+
         # give app SP permissions on workspace location
         try:
             directory = self.w.workspace.get_status(self.config.get("DEPLOYMENT_PATH"))
             self.w.workspace.update_permissions(
-                workspace_object_type="DIRECTORY", #directory.object_type, ObjectType.DIRECTORY
+                workspace_object_type="directories", #directory.object_type, ObjectType.DIRECTORY# incorrect docs again
                 workspace_object_id=str(directory.object_id),
                 access_control_list=[
                     WorkspaceObjectAccessControlRequest(
@@ -378,17 +396,6 @@ class SetUpMigrationAssistant:
                 f"Could not set permissions for Directory {self.config.get('DEPLOYMENT_PATH')}: and service_principal {self.app.service_principal_name}"
             )
             logger.warning(e)
-
-    @_handle_errors
-    def setup_deployment_dir(self):
-        if self.app.default_source_code_path == "":
-            deployment_path = self.prompts.question(
-                "Choose a workspace directory to deploy the code",
-                default=f"/Workspace/Users/{self.w.current_user.me().user_name}/.sql_migration_assistant",
-            )
-        else:
-            deployment_path = self.app.default_source_code_path
-        self.config["DEPLOYMENT_PATH"] = deployment_path
 
 
     def setup_migration_assistant(self):
@@ -407,6 +414,10 @@ class SetUpMigrationAssistant:
         logging.info("Setting up Unity Catalog infrastructure")
         print("\nSetting up Unity Catalog infrastructure")
         self.setup_unity()
+
+        logging.info("Setting up Vector Search infrastructure")
+        print("\nSetting up Vector Search infrastructure")
+        self.setup_vector_search()
 
         ############################################################
         logging.info("Setting up Databricks App")
