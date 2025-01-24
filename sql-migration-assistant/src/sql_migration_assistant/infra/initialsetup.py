@@ -11,6 +11,7 @@ from databricks.sdk.service.sql import (
     WarehouseAccessControlRequest,
     WarehousePermissionLevel,
 )
+from databricks.sdk.service.catalog import VolumeType
 
 from sql_migration_assistant.utils import logger
 from sql_migration_assistant.utils.storage import get_db_connection
@@ -52,6 +53,11 @@ class SetUpMigrationAssistant:
         self.config = {}
         self.prompts = p
         self.warehouse = None
+        self.volume_dirs = {
+                "checkpoint": "code_ingestion_checkpoints",
+                "input": "input_code",
+                "output": "output_code",
+            }
 
     def create_or_select(
         self,
@@ -139,11 +145,28 @@ class SetUpMigrationAssistant:
                 comment="Schema for storing assets related to the SQL migration assistant.",
             )
 
+        def _create_UC_volume(name):
+            self.w.volumes.create(
+                name=name,
+                catalog_name=self.config.get("CATALOG"),
+                schema_name=self.config.get("SCHEMA"),
+                comment="Volume for storing assets related to the SQL migration assistant.",
+                volume_type=VolumeType.MANAGED,
+            )
+            for key in self.volume_dirs.keys():
+                dir_ = self.volume_dirs[key]
+                volume_path = f"/Volumes/{self.config.get('CATALOG')}/{self.config.get('SCHEMA')}/{name}/{dir_}"
+                self.w.dbutils.fs.mkdirs(volume_path)
+
+
         def _list_catalogs():
             return [x.name for x in self.w.catalogs.list()]
 
         def _list_schema():
             return [x.name for x in self.w.schemas.list(self.config.get("CATALOG"))]
+
+        def _list_volumes():
+            return [x.name for x in self.w.volumes.list(catalog_name=self.config.get("CATALOG"), schema_name=self.config.get("SCHEMA"))]
 
         catalog = self.create_or_select(
             "catalog",
@@ -160,6 +183,19 @@ class SetUpMigrationAssistant:
             default="sql_migration_assistant",
         )
         self.config["SCHEMA"] = schema
+
+        volume = self.create_or_select(
+            "volume",
+            _list_volumes,
+            create=_create_UC_volume,
+            default="sql_migration_assistant_volume",
+        )
+        self.config["VOLUME_NAME"] = volume
+        for key in self.volume_dirs.keys():
+            dir_ = self.volume_dirs[key]
+            volume_path = f"/Volumes/{self.config.get('CATALOG')}/{self.config.get('SCHEMA')}/{volume}/{dir_}"
+            self.config[f"VOLUME_NAME_{key.upper()}_PATH"] = volume_path
+
 
     @_handle_errors
     def setup_app(self):
