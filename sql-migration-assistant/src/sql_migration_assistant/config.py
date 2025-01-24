@@ -59,8 +59,8 @@ class Config:
                 self.config[row["key"]] = row["value"]
 
     def from_environ(self):
-        for key in ["CATALOG", "SCHEMA", "WAREHOUSE_ID"]:
-            self.config[key] = os.environ.get(key)
+        for key, value in os.environ.items():
+            self.config[key] = value
 
     def set_config(self, key, value):
         logger.info(f"Setting Config {key} to {value}")
