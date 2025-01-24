@@ -98,9 +98,9 @@ class ConfigTab:
                     }
                 )
                 gr.Info("Configurations saved")
-                # if c and d:
-                #     return gr.update(visible=True)
-                return gr.update(visible=True)
+                if c and d:
+                    return gr.update(value=True)
+                return gr.update(value=True)
 
             self.save_config.click(
                 set_configs,
