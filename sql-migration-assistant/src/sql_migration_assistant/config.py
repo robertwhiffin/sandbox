@@ -31,7 +31,7 @@ class Config:
         )
         self.w = get_workspace_client(self.profile)
         self.catalog = self.config.get("CATALOG")
-        self.schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
+        self.catalog_schema = f"{self.catalog}.{self.config.get('SCHEMA')}"
         self.config_table = self.config.get("CONFIG_TABLE_NAME")
         self.validate_first_setup()
         self.con = get_db_connection(self.profile, self.warehouse.id)

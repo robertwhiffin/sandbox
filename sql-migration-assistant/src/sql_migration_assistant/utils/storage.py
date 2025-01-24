@@ -26,7 +26,7 @@ def read(
     select_clause = "*" if columns is None else ",".join(columns)
     where_clause = "" if where is None else f" WHERE {where}"
     return pd.read_sql_query(
-        f"SELECT {select_clause} FROM {config.schema}.{table}{where_clause}", config.con
+        f"SELECT {select_clause} FROM {config.catalog_schema}.{table}{where_clause}", config.con
     )
 
 
@@ -51,7 +51,7 @@ def construct_upsert_query(
         [f"""('{"','".join([str(row[c]) for c in columns])}')""" for row in values]
     )
     logger.debug(f"Upserting, value clause: {values_clause}")
-    query = f"INSERT INTO {config.schema}.{table} REPLACE WHERE {where_clause} VALUES {values_clause}"
+    query = f"INSERT INTO {config.catalog_schema}.{table} REPLACE WHERE {where_clause} VALUES {values_clause}"
     logger.debug(f"Upserting, query: {query}")
     return query
 
@@ -63,7 +63,7 @@ def construct_insert_query(
     values_clause = ",".join(
         [f"""('{"','".join([v for v in row.values()])}')""" for row in values]
     )
-    query = f"INSERT INTO {config.schema}.{table} ({','.join(values[0].keys())}) VALUES {values_clause}"
+    query = f"INSERT INTO {config.catalog_schema}.{table} ({','.join(values[0].keys())}) VALUES {values_clause}"
     logger.debug(f"Inserting, query: {query}")
     return query
 
@@ -90,21 +90,21 @@ def insert(
     if upsert:
         # Get column order of base table
         columns = [
-            c.name for c in config.w.tables.get(f"{config.schema}.{table}").columns
+            c.name for c in config.w.tables.get(f"{config.catalog_schema}.{table}").columns
         ]
         # check if all columns are present
         if set(columns) != set(values[0].keys()):
             raise ValueError("All columns need to be specified for upserting")
         query = construct_upsert_query(table, values, keys, columns, config=config)
     else:
-        query = construct_insert_query(table, values, config, config=config)
+        query = construct_insert_query(table, values, config=config)
     execute_query(query, config=config)
 
 
 @ensure_config
 def table_exists(table: str, config=None) -> bool:
     try:
-        config.w.tables.get(f"{config.schema}.{table}")
+        config.w.tables.get(f"{config.catalog_schema}.{table}")
         return True
     except NotFound:
         return False
@@ -112,7 +112,7 @@ def table_exists(table: str, config=None) -> bool:
 
 @ensure_config
 def create_table(table: str, schema: str, config=None):
-    execute_query(f"Create table {config.schema}.{table} ({schema});", config=config)
+    execute_query(f"Create table {config.catalog_schema}.{table} ({schema});", config=config)
 
 
 @ensure_config
