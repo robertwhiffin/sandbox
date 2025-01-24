@@ -128,8 +128,6 @@ class Config:
         return (
             len(
                 {
-                    "EMBEDDING_MODEL_ENDPOINT",
-                    "VECTOR_SEARCH_ENDPOINT_NAME",
                     "VOLUME",
                 }.difference(self.config.keys())
             )

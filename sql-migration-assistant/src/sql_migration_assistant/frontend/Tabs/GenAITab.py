@@ -162,7 +162,8 @@ class GenAITab:
                     # output box of the translated code
                     if purpose == Purpose.EXPLAIN:
                         self.output = gr.Markdown(
-                            label="AI Agent Output.", elem_classes="custom-markdown"
+                            label="AI Agent Output.", elem_classes="custom-markdown",
+                            value="Agent output will appear here in Markdown"
                         )
                     elif purpose == Purpose.TRANSLATE:
                         self.output = gr.Code(

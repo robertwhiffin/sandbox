@@ -104,7 +104,7 @@ class SimilarCodeTab:
             )
 
             self.find_similar_code.click(
-                fn=lambda: [gr.update(visible=True)] * 7,
+                fn=lambda: [gr.update(visible=True)] * 6,
                 outputs=[
                     self.find_similar_code,
                     self.similar_intent,

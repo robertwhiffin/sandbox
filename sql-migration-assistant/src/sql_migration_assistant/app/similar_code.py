@@ -24,7 +24,7 @@ class SimilarCode:
     def save_intent(self, code, intent, url):
         code_hash = hash(code)
         catalog = self.catalog_schema.split(".")[0]
-        schema = self.catalog_schema.split(".")[0]
+        schema = self.catalog_schema.split(".")[1]
         _ = self.w.statement_execution.execute_statement(
             statement=f'INSERT INTO {self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
             warehouse_id=self.warehouse_id
