@@ -4,7 +4,6 @@ from importlib.metadata import version
 from logging import StreamHandler
 
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.config import Config
 
 logger = logging.getLogger("sql_migration_assistant")
 logger.setLevel(logging.INFO)

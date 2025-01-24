@@ -12,7 +12,8 @@ from databricks.sdk.service.sql import (
     WarehousePermissionLevel,
 )
 
-from sql_migration_assistant.utils import logger, get_db_connection
+from sql_migration_assistant.utils import logger
+from sql_migration_assistant.utils.storage import get_db_connection
 
 
 # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
@@ -189,7 +190,7 @@ class SetUpMigrationAssistant:
                         self.warehouse.id
                     ).access_control_list,
                     WarehouseAccessControlRequest(
-                        service_principal_name=app.service_principal_name,
+                        service_principal_name=self.app.service_principal_name,
                         permission_level=WarehousePermissionLevel.CAN_USE,
                     ),
                 ],
