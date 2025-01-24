@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 import webbrowser
 
@@ -11,6 +12,7 @@ def ip_access_list_analyzer(**args):
     analyzer.main(args)
 
 def sql_migration_assistant(**kwargs):
+    sys.path.append(os.getcwd() + "sql-migration-assistant/src")
     from sql_migration_assistant.infra import init, deploy
     profile = kwargs.get("profile", "DEFAULT")
     if kwargs.get("commands") in ("init", "all"):
