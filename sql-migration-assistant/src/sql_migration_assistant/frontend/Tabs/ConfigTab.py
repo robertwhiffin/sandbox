@@ -34,6 +34,8 @@ class ConfigTab:
             #     interactive=True,
             #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
             # )
+
+            # todo - make this a dropdown of folder names in the volume defined at setup
             self.volume_dropdown = gr.Dropdown(
                 choices=[
                     volume.name
@@ -49,41 +51,55 @@ class ConfigTab:
                 self.tab, label="Default Foundation Endpoint"
             )
 
-            self.intent_tabel_name_box = gr.Textbox(
-                label="Intent Table",
-                interactive=True,
-                value=config.get("CODE_INTENT_TABLE_NAME"),
-            )
+            # configing the VS index on the fly requires more thought, as the VS
+            # infra needs an table, embedding model, and VS endpoint to be set up - can't change one with
+            # out changing all
+
+            # self.intent_tabel_name_box = gr.Textbox(
+            #     label="Intent Table",
+            #     interactive=True,
+            #     value=config.get("CODE_INTENT_TABLE_NAME"),
+            # )
+
             self.prompt_tabel_name_box = gr.Textbox(
-                label="Intent Table",
+                label="Instructions Table",
                 interactive=True,
                 value=config.get("INSTRUCTIONS_TABLE_NAME"),
             )
 
-            self.vector_search_index_box = gr.Textbox(
-                label="Vector Search Index",
-                interactive=True,
-                value=config.get("VS_INDEX_NAME"),
-            )
+            # this is not configurable as the VS index can only have a single backing index
+            # self.vector_search_index_box = gr.Textbox(
+            #     label="Vector Search Index",
+            #     interactive=True,
+            #     value=config.get("VS_INDEX_NAME"),
+            # )
 
             self.save_config = gr.Button(
                 f"Save {title}",
             )
 
-            def set_configs(a, b, c, d, x, y, z):
+            def set_configs(
+                    #a,
+                    #b,
+                    c,
+                    d,
+                    #x,
+                    y,
+                    #z
+            ):
                 config.set_configs(
                     {
-                        "EMBEDDING_MODEL_ENDPOINT": a,
-                        "VECTOR_SEARCH_ENDPOINT_NAME": b,
+                       # "EMBEDDING_MODEL_ENDPOINT": a,
+                       # "VECTOR_SEARCH_ENDPOINT_NAME": b,
                         "VOLUME": c,
                         "DEFAULT_LLM": d,
-                        "CODE_INTENT_TABLE_NAME": x,
+                       # "CODE_INTENT_TABLE_NAME": x,
                         "INSTRUCTIONS_TABLE_NAME": y,
-                        "VS_INDEX_NAME": z,
+                       # "VS_INDEX_NAME": z,
                     }
                 )
                 gr.Info("Configurations saved")
-                if a and b and c and d:
+                if c and d:
                     return gr.update(value=True)
                 return gr.update()
 
@@ -94,9 +110,9 @@ class ConfigTab:
                    # self.vector_search_dropdown,
                     self.volume_dropdown,
                     self.default_llm_dropdown,
-                    self.intent_tabel_name_box,
+                    #self.intent_tabel_name_box,
                     self.prompt_tabel_name_box,
-                    self.vector_search_index_box,
+                    #self.vector_search_index_box,
                 ],
                 outputs=initialized,
             )
@@ -134,8 +150,8 @@ class ConfigTab:
                    # self.embedding_model_endpoint_dropdown,
                    # self.vector_search_dropdown,
                     self.volume_dropdown,
-                    self.intent_tabel_name_box,
+                    #self.intent_tabel_name_box,
                     self.prompt_tabel_name_box,
-                    self.vector_search_index_box,
+                    #self.vector_search_index_box,
                 ],
             )

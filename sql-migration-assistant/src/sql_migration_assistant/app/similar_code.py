@@ -10,18 +10,26 @@ class SimilarCode:
         code_intent_table_name,
         VS_index_name,
         VS_endpoint_name,
+        warehouse_id
     ):
         self.w = workspace_client
         self.catalog_schema = catalog_schema
         # FQN = Fully Qualified Name
         self.code_intent_table_FQN = f"{catalog_schema}.{code_intent_table_name}"
+        self.code_intent_table_name = code_intent_table_name
         self.vs_index_FQN = f"{catalog_schema}.{VS_index_name}"
         self.vs_endpoint_name = VS_endpoint_name
+        self.warehouse_id = warehouse_id
 
     def save_intent(self, code, intent, url):
         code_hash = hash(code)
-        _ = self.see.execute(
-            f'INSERT INTO {self.code_intent_table_FQN} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
+        catalog = self.catalog_schema.split(".")[0]
+        schema = self.catalog_schema.split(".")[0]
+        _ = self.w.statement_execution.execute_statement(
+            statement=f'INSERT INTO {self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
+            warehouse_id=self.warehouse_id
+            , catalog=catalog
+            , schema=schema
         )
 
     def get_similar_code(self, intent):
