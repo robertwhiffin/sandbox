@@ -222,9 +222,6 @@ class SetUpMigrationAssistant:
             self.w.warehouses.update_permissions(
                 self.warehouse.id,
                 access_control_list=[
-                    *self.w.warehouses.get_permissions(
-                        self.warehouse.id
-                    ).access_control_list,
                     WarehouseAccessControlRequest(
                         service_principal_name=self.app.service_principal_name,
                         permission_level=WarehousePermissionLevel.CAN_USE,
@@ -235,6 +232,7 @@ class SetUpMigrationAssistant:
             logger.warning(
                 f"Could not set permissions for warehouse {self.warehouse.name}: and service_principal {self.app.service_principal_name}"
             )
+            logger.warning(e)
         try:
             con = get_db_connection(self.w.config.profile, self.warehouse.id)
             cursor = con.cursor()
