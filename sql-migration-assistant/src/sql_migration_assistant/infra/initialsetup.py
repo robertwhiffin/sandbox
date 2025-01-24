@@ -1,6 +1,6 @@
 import logging
 from typing import Callable
-
+import time
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import ResourceAlreadyExists, BadRequest
@@ -12,9 +12,19 @@ from databricks.sdk.service.sql import (
     WarehousePermissionLevel,
 )
 from databricks.sdk.service.catalog import VolumeType
+from databricks.sdk.service.workspace import ObjectType, WorkspaceObjectAccessControlRequest, WorkspaceObjectPermissionLevel
 
 from sql_migration_assistant.utils import logger
 from sql_migration_assistant.utils.storage import get_db_connection
+
+from databricks.sdk.errors.platform import ResourceAlreadyExists, NotFound
+from databricks.sdk.service.vectorsearch import (
+    EndpointType,
+    DeltaSyncVectorIndexSpecRequest,
+    PipelineType,
+    EmbeddingSourceColumn,
+    VectorIndexType,
+)
 
 
 # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
@@ -60,21 +70,21 @@ class SetUpMigrationAssistant:
             }
 
     def create_or_select(
-        self,
-        entity: str,
-        list_all: Callable[[], list[str]],
-        create: Callable[[str], None],
-        default: str,
+            self,
+            entity: str,
+            list_all: Callable[[], list[str]],
+            create: Callable[[str], None],
+            default: str,
     ) -> str:
         """
         User choose a Entity that can be selected from existing ones or created new
         """
         create_new = (
-            self.prompts.choice(
-                f"Create a new {entity} or use existing?",
-                ["Create new", "Use existing"],
-            )
-            == "Create new"
+                self.prompts.choice(
+                    f"Create a new {entity} or use existing?",
+                    ["Create new", "Use existing"],
+                )
+                == "Create new"
         )
         if not create_new:
             all_entities = list_all()
@@ -94,6 +104,24 @@ class SetUpMigrationAssistant:
             print(f"Creating a new {entity} {new_name}.")
             create(new_name)
             return new_name
+
+    def select_only(
+        self,
+        entity: str,
+        list_all: Callable[[], list[str]],
+    ) -> str:
+        """
+        User choose a Entity that can be selected from existing ones
+                """
+        all_entities = list_all()
+
+        choices = all_entities
+
+        question = f"Choose a {entity}: please enter the number of the {entity} you would like to use."
+        choice = self.prompts.choice(question, choices, sort=False)
+
+        return choice
+
 
     @_handle_errors
     def setup_warehouse(self):
@@ -158,6 +186,20 @@ class SetUpMigrationAssistant:
                 volume_path = f"/Volumes/{self.config.get('CATALOG')}/{self.config.get('SCHEMA')}/{name}/{dir_}"
                 self.w.dbutils.fs.mkdirs(volume_path)
 
+        def _create_tables():
+            tables = {
+            self.config.get("CODE_INTENT_TABLE_NAME") : f"(id BIGINT, code STRING, intent STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+            }
+            con = get_db_connection(self.w.config.profile, self.warehouse.id)
+            cursor = con.cursor()
+            for table_name, table_spec in tables.items():
+                FQN = f"{self.config.get('CATALOG')}.{self.config.get('SCHEMA')}.{table_name}"
+                cursor.execute(
+                    f"CREATE TABLE IF NOT EXISTS `{FQN}` {table_spec}"
+                )
+
+            cursor.close()
+
 
         def _list_catalogs():
             return [x.name for x in self.w.catalogs.list()]
@@ -167,6 +209,7 @@ class SetUpMigrationAssistant:
 
         def _list_volumes():
             return [x.name for x in self.w.volumes.list(catalog_name=self.config.get("CATALOG"), schema_name=self.config.get("SCHEMA"))]
+
 
         catalog = self.create_or_select(
             "catalog",
@@ -196,6 +239,7 @@ class SetUpMigrationAssistant:
             volume_path = f"/Volumes/{self.config.get('CATALOG')}/{self.config.get('SCHEMA')}/{volume}/{dir_}"
             self.config[f"VOLUME_NAME_{key.upper()}_PATH"] = volume_path
 
+        _create_tables()
 
     @_handle_errors
     def setup_app(self):
@@ -217,7 +261,65 @@ class SetUpMigrationAssistant:
         self.app = self.w.apps.get(app_name)
         self._set_permissions()
 
+    @_handle_errors
+    def setup_vector_search(self):
+
+        def _create_VS_endpoint(name):
+            self.w.vector_search_endpoints.create_endpoint(
+                name=name,
+                endpoint_type=EndpointType.STANDARD,
+            )
+
+        def _create_VS_index():
+            try:
+                self.w.vector_search_indexes.create_index(
+                    name=self.config.get("VS_INDEX_NAME"),
+                    endpoint_name=self.config.get("VS_ENDPOINT_NAME"),
+                    primary_key="id",
+                    index_type=VectorIndexType.DELTA_SYNC,
+                    delta_sync_index_spec=DeltaSyncVectorIndexSpecRequest(
+                        source_table=self.config.get("CODE_INTENT_TABLE_NAME"),
+                        pipeline_type=PipelineType.TRIGGERED,
+                        embedding_source_columns=[
+                            EmbeddingSourceColumn(
+                                embedding_model_endpoint_name=self.config.get("EMBEDDING_MODEL_ENDPOINT"),
+                                name="intent",
+                            )
+                        ]
+                    ),
+                )
+            except ResourceAlreadyExists as e:
+                logging.info(
+                    f"Index {self.config.get('VS_INDEX_NAME')} already exists. Using existing index."
+                )
+            except Exception as e:
+                raise e
+
+        def _list_vs_endpoints():
+            return [x.name for x in self.w.vector_search_endpoints.list_endpoints()]
+
+        def _list_embedding_models():
+            return [e.name for e in self.w.serving_endpoints.list() if e.task and "embedding" in e.task]
+
+        endpoint = self.create_or_select(
+            entity="Vector Search endpoint",
+            list_all=_list_vs_endpoints,
+            create=_create_VS_endpoint,
+            default="sql_migration_assistant_vs_endpoint",
+        )
+        self.config["VS_ENDPOINT_NAME"] = endpoint
+
+        embedding_model = self.select_only(
+            entity="Embedding Model",
+            list_all=_list_embedding_models
+        )
+        self.config["EMBEDDING_MODEL_ENDPOINT"] = embedding_model
+
+        _create_VS_index()
+
+    @_handle_errors
     def _set_permissions(self):
+        # give app SP permissions on warehouse
         try:
             self.w.warehouses.update_permissions(
                 self.warehouse.id,
@@ -233,6 +335,7 @@ class SetUpMigrationAssistant:
                 f"Could not set permissions for warehouse {self.warehouse.name}: and service_principal {self.app.service_principal_name}"
             )
             logger.warning(e)
+        # give app SP permissions on catalog
         try:
             con = get_db_connection(self.w.config.profile, self.warehouse.id)
             cursor = con.cursor()
@@ -244,6 +347,7 @@ class SetUpMigrationAssistant:
             logger.warning(
                 f"Could not set permissions for Catalog {self.config.get('CATALOG')}: and service_principal {self.app.service_principal_name}"
             )
+        # give app SP permissions on schema
         try:
             con = get_db_connection(self.w.config.profile, self.warehouse.id)
             cursor = con.cursor()
@@ -255,17 +359,37 @@ class SetUpMigrationAssistant:
             logger.warning(
                 f"Could not set permissions for Schema {self.config.get('CATALOG')}.{self.config.get('SCHEMA')}: and service_principal {self.app.service_principal_name}"
             )
+            logger.warning(e)
+        # give app SP permissions on workspace location
+        try:
+            directory = self.w.workspace.get_status(self.config.get("DEPLOYMENT_PATH"))
+            self.w.workspace.update_permissions(
+                workspace_object_type="DIRECTORY", #directory.object_type, ObjectType.DIRECTORY
+                workspace_object_id=str(directory.object_id),
+                access_control_list=[
+                    WorkspaceObjectAccessControlRequest(
+                        service_principal_name=self.app.service_principal_client_id,
+                        permission_level=WorkspaceObjectPermissionLevel.CAN_MANAGE,
+                    )
+                ],
+            )
+        except Exception as e:
+            logger.warning(
+                f"Could not set permissions for Directory {self.config.get('DEPLOYMENT_PATH')}: and service_principal {self.app.service_principal_name}"
+            )
+            logger.warning(e)
 
     @_handle_errors
     def setup_deployment_dir(self):
         if self.app.default_source_code_path == "":
             deployment_path = self.prompts.question(
                 "Choose a workspace directory to deploy the code",
-                default=f"/Workspace/Users/{self.w.current_user.me().user_name}/sql_migration_assistant",
+                default=f"/Workspace/Users/{self.w.current_user.me().user_name}/.sql_migration_assistant",
             )
         else:
             deployment_path = self.app.default_source_code_path
         self.config["DEPLOYMENT_PATH"] = deployment_path
+
 
     def setup_migration_assistant(self):
         logging.info("Setting up infrastructure")

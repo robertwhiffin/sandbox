@@ -14,26 +14,26 @@ class ConfigTab:
         self.w = config.w
         with gr.Tab(label=title, visible=visible) as self.tab:
             self.header = gr.Markdown(f"## {title}")
-            self.embedding_model_endpoint_dropdown = gr.Dropdown(
-                choices=[
-                    e.name
-                    for e in self.w.serving_endpoints.list()
-                    if e.task and "embedding" in e.task
-                ],
-                label="Embedding Endpoint",
-                interactive=True,
-                value=config.get("EMBEDDING_MODEL_ENDPOINT"),
-            )
+            # self.embedding_model_endpoint_dropdown = gr.Dropdown(
+            #     choices=[
+            #         e.name
+            #         for e in self.w.serving_endpoints.list()
+            #         if e.task and "embedding" in e.task
+            #     ],
+            #     label="Embedding Endpoint",
+            #     interactive=True,
+            #     value=config.get("EMBEDDING_MODEL_ENDPOINT"),
+            # )
 
-            self.vector_search_dropdown = gr.Dropdown(
-                choices=[
-                    f"{endpoint.name} ({endpoint.num_indexes} indices)"
-                    for endpoint in self.w.vector_search_endpoints.list_endpoints()
-                ],
-                label="Vector Search Endpoint",
-                interactive=True,
-                value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
-            )
+            # self.vector_search_dropdown = gr.Dropdown(
+            #     choices=[
+            #         f"{endpoint.name} ({endpoint.num_indexes} indices)"
+            #         for endpoint in self.w.vector_search_endpoints.list_endpoints()
+            #     ],
+            #     label="Vector Search Endpoint",
+            #     interactive=True,
+            #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
+            # )
             self.volume_dropdown = gr.Dropdown(
                 choices=[
                     volume.name

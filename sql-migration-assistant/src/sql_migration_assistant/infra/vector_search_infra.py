@@ -4,7 +4,6 @@ import time
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors.platform import ResourceAlreadyExists, NotFound
-from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 from databricks.sdk.service.vectorsearch import (
     EndpointType,
     DeltaSyncVectorIndexSpecRequest,
@@ -12,7 +11,6 @@ from databricks.sdk.service.vectorsearch import (
     EmbeddingSourceColumn,
     VectorIndexType,
 )
-from sql_migration_assistant.utils.uc_model_version import get_latest_model_version
 
 
 class VectorSearchInfra:
@@ -20,13 +18,6 @@ class VectorSearchInfra:
         self.w = workspace_client
         self.config = config
         self.prompts = p
-
-        # set defaults for user to override if they choose
-        self.default_VS_endpoint_name = "sql_migration_assistant_vs_endpoint"
-        self.default_embedding_endpoint_name = (
-            "sql_migration_assistant_bge_large_en_v1_5"
-        )
-        self.default_embedding_model_UC_path = "system.ai.bge_large_en_v1_5"
 
         # these are updated as the user makes a choice about which VS endpoint and embedding model to use.
         # the chosen values are then written back into the config file.
@@ -119,32 +110,10 @@ class VectorSearchInfra:
                 "EMBEDDING_MODEL_ENDPOINT_NAME"
             ] = self.migration_assistant_embedding_model_name
 
-    def _create_embedding_model_endpoint(self):
-        latest_version = get_latest_model_version(
-            model_name=self.default_embedding_model_UC_path
-        )
-        latest_version = str(latest_version)
 
-        self.w.serving_endpoints.create(
-            name=self.migration_assistant_embedding_model_name,
-            config=EndpointCoreConfigInput(
-                name=self.migration_assistant_embedding_model_name,
-                served_entities=[
-                    ServedEntityInput(
-                        entity_name=self.default_embedding_model_UC_path,
-                        entity_version=latest_version,
-                        name=self.migration_assistant_embedding_model_name,
-                        scale_to_zero_enabled=True,
-                        workload_type="GPU_SMALL",
-                        workload_size="Small",
-                    )
-                ],
-            ),
-        )
-
-    def _create_VS_endpoint(self):
+    def _create_VS_endpoint(self, name):
         self.w.vector_search_endpoints.create_endpoint(
-            name=self.migration_assistant_VS_endpoint,
+            name=name,
             endpoint_type=EndpointType.STANDARD,
         )
 
