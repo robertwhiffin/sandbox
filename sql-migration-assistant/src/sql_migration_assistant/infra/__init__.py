@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import databricks.sdk.errors.platform
 import yaml
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
@@ -95,6 +96,16 @@ def create_requirements_txt(project_dir_resolved: Path):
 def upload_data(w: WorkspaceClient, deployment_path, project_dir_resolved: Path):
     for f in os.listdir(project_dir_resolved / "dist"):
         with open(f"{project_dir_resolved}/dist/{f}", "rb") as file:
-            w.workspace.upload(
-                f"{deployment_path}/{f}", file, format=ImportFormat.RAW, overwrite=True
-            )
+            try:
+                w.workspace.upload(
+                    f"{deployment_path}/{f}", file, format=ImportFormat.RAW, overwrite=True
+                )
+            except databricks.sdk.errors.platform.ResourceDoesNotExist as e:
+                if "The parent folder" in str(e) and "does not exist" in str(e):
+                    w.workspace.mkdirs(deployment_path)
+                    w.workspace.upload(
+                        f"{deployment_path}/{f}",
+                        file,
+                        format=ImportFormat.RAW,
+                        overwrite=True,
+                    )
