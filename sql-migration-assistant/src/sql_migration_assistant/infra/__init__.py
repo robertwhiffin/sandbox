@@ -47,15 +47,17 @@ def deploy(profile, **kwargs):
 
     cleanup(project_dir_resolved)
 
+    os.chdir(project_dir_resolved)
+
     subprocess.run(["python3", "-m", "build"])
-    create_app_yml(config)
-    create_requirements_txt()
+    create_app_yml(project_dir_resolved, config)
+    create_requirements_txt(project_dir_resolved)
 
     w = get_workspace_client(kwargs.get("profile"))
 
     deployment_path = config.get("DEPLOYMENT_PATH")
 
-    upload_data(w, deployment_path)
+    upload_data(w, deployment_path, project_dir_resolved)
 
     print("Deploying app")
     deployment = w.apps.deploy_and_wait(
@@ -66,32 +68,32 @@ def deploy(profile, **kwargs):
     print(f"App deployed. URL: {app.url} with result {deployment.status}")
 
 
-def cleanup(project_dir_resolved: str):
-    shutil.rmtree(project_dir_resolved + "/dist", ignore_errors=True)
+def cleanup(project_dir_resolved: Path):
+    shutil.rmtree(project_dir_resolved / "dist", ignore_errors=True)
 
 
-def create_app_yml(project_dir_resolved, config):
+def create_app_yml(project_dir_resolved: Path, config):
     content = {
         "command": ["sql-migration-assistant"],
         "env": [{"name": key, "value": value} for key, value in config.items()],
     }
-    with open(project_dir_resolved + "/dist/app.yml", "w") as file:
+    with open(project_dir_resolved / "dist/app.yml", "w") as file:
         yaml.dump(content, file)
 
 
-def create_requirements_txt(project_dir_resolved):
-    with open(project_dir_resolved + "/dist/requirements.txt", "w") as file:
+def create_requirements_txt(project_dir_resolved: Path):
+    with open(project_dir_resolved / "dist/requirements.txt", "w") as file:
         file.write(
             [
                 x
-                for x in os.listdir(project_dir_resolved + "/dist")
+                for x in os.listdir(project_dir_resolved / "dist")
                 if x.endswith(".whl")
             ][0]
         )
 
 
-def upload_data(w: WorkspaceClient, deployment_path, project_dir_resolved):
-    for f in os.listdir(project_dir_resolved + "/dist"):
+def upload_data(w: WorkspaceClient, deployment_path, project_dir_resolved: Path):
+    for f in os.listdir(project_dir_resolved / "dist"):
         with open(f"{project_dir_resolved}/dist/{f}", "rb") as file:
             w.workspace.upload(
                 f"{deployment_path}/{f}", file, format=ImportFormat.RAW, overwrite=True
