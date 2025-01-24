@@ -28,7 +28,7 @@ similar_code_helper = SimilarCode(
     catalog_schema=config.catalog_schema,
     code_intent_table_name=config.get("CODE_INTENT_TABLE_NAME"),
     VS_index_name=config.get("VS_INDEX_NAME"),
-    VS_endpoint_name=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
+    VS_endpoint_name=config.get("VS_INDEX_NAME"),
     warehouse_id=config.get('WAREHOUSE_ID')
 )
 
