@@ -25,12 +25,15 @@ class SimilarCode:
         code_hash = hash(code)
         catalog = self.catalog_schema.split(".")[0]
         schema = self.catalog_schema.split(".")[1]
-        _ = self.w.statement_execution.execute_statement(
-            statement=f'INSERT INTO {self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
-            warehouse_id=self.warehouse_id
-            , catalog=catalog
-            , schema=schema
-        )
+        try:
+            _ = self.w.statement_execution.execute_statement(
+                statement=f'INSERT INTO {self.code_intent_table_name} VALUES ({code_hash}, "{code}", "{intent}", "{url}")',
+                warehouse_id=self.warehouse_id
+                , catalog=catalog
+                , schema=schema
+            )
+        except Exception as e:
+            raise gr.Error(f"Failed to save intent: {e}")
 
     def get_similar_code(self, intent):
         gr.Info("Retrieving similar code...")
