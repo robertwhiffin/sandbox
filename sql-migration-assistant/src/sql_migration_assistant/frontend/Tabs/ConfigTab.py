@@ -35,7 +35,6 @@ class ConfigTab:
             #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
             # )
 
-            # todo - make this a dropdown of folder names in the volume defined at setup
             self.volume_dropdown = gr.Dropdown(
                 choices=[
                     volume.name
@@ -118,21 +117,21 @@ class ConfigTab:
             )
             self.tab.select(
                 lambda: [
-                    gr.update(
-                        value=config.get("EMBEDDING_MODEL_ENDPOINT"),
-                        choices=[
-                            e.name
-                            for e in self.w.serving_endpoints.list()
-                            if e.task and "embedding" in e.task
-                        ],
-                    ),
-                    gr.update(
-                        value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
-                        choices=[
-                            f"{endpoint.name} ({endpoint.num_indexes} indices)"
-                            for endpoint in self.w.vector_search_endpoints.list_endpoints()
-                        ],
-                    ),
+                    #gr.update(
+                    #     value=config.get("EMBEDDING_MODEL_ENDPOINT"),
+                    #     choices=[
+                    #         e.name
+                    #         for e in self.w.serving_endpoints.list()
+                    #         if e.task and "embedding" in e.task
+                    #     ],
+                    # ),
+                    # gr.update(
+                    #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
+                    #     choices=[
+                    #         f"{endpoint.name} ({endpoint.num_indexes} indices)"
+                    #         for endpoint in self.w.vector_search_endpoints.list_endpoints()
+                    #     ],
+                    # ),
                     gr.update(
                         value=config.get("VOLUME"),
                         choices=[
@@ -142,9 +141,9 @@ class ConfigTab:
                             )
                         ],
                     ),
-                    gr.update(value=config.get("CODE_INTENT_TABLE_NAME")),
+                    #gr.update(value=config.get("CODE_INTENT_TABLE_NAME")),
                     gr.update(value=config.get("INSTRUCTIONS_TABLE_NAME")),
-                    gr.update(value=config.get("VS_INDEX_NAME")),
+                   # gr.update(value=config.get("VS_INDEX_NAME")),
                 ],
                 outputs=[
                    # self.embedding_model_endpoint_dropdown,
