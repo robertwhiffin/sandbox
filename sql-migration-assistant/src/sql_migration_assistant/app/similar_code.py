@@ -39,7 +39,7 @@ class SimilarCode:
         gr.Info("Retrieving similar code...")
         results = self.w.vector_search_indexes.query_index(
             index_name=f"{self.vs_index_FQN}",
-            columns=["code", "intent", "notebook_url"],
+            columns=["code", "intent", "url"],
             query_text=intent,
             num_results=5,
         )
