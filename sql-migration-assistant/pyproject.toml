@@ -34,6 +34,3 @@ relative_to = "pyproject.toml"  # Ensure paths are resolved relative to this fil
 
 [project.scripts]
 sql-migration-assistant = "sql_migration_assistant.main:main"
-
-[tool.setuptools.packages.find]
-where = ["src"]
