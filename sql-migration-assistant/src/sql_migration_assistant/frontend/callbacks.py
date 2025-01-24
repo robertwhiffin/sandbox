@@ -170,11 +170,11 @@ def write_adhoc_to_workspace(
             overwrite=overwrite,
         )
     except databricks.sdk.errors.platform.ResourceAlreadyExists:
-        gr.Error(
+        raise gr.Error(
             f"Notebook **{file_name}** already exists. Please check the overwrite box if you want to overwrite the file."
         )
     except Exception as e:
-        gr.Error(f"Error writing notebook to workspace: {e}")
+        raise gr.Error(f"Error writing notebook to workspace: {e}")
 
     _ = w.workspace.get_status(notebook_path)
     id = _.object_id
