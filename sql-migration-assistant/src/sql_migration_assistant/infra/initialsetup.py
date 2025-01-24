@@ -223,7 +223,7 @@ class SetUpMigrationAssistant:
                 self.warehouse.id,
                 access_control_list=[
                     WarehouseAccessControlRequest(
-                        service_principal_name=self.app.service_principal_name,
+                        service_principal_name=self.app.service_principal_client_id,
                         permission_level=WarehousePermissionLevel.CAN_USE,
                     ),
                 ],
