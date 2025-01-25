@@ -189,9 +189,21 @@ class SetUpMigrationAssistant:
         def _create_tables():
             #TODO move this table name / table schema somewhere else?
             tables = {
-                "sql_migration_assistant_code_intent" : f"(id BIGINT, code STRING, intent STRING, url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+                "code_intent": f"(id BIGINT, code STRING, intent STRING, notebook_url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+                "bronze_raw_code": f"(path STRING, modificationTime TIMESTAMP, length INT, content STRING,loadDatetime TIMESTAMP)",
+                "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
+                "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
+                                        f"loadDatetime TIMESTAMP, promptID INT, "
+                                        f"agentConfigs MAP <STRING, MAP <STRING, STRING>>)",
+                "silver_llm_responses": f"(path STRING, promptID INT, processedDateString STRING, content STRING, "
+                                        f"agentName STRING, agentResponse STRING, outputNotebookPath STRING, "
+                                        f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, "
+                                        f"similarity:DOUBLE>>)",
+                "gold_transformed_notebooks": f"(promptID INT, content STRING, processedDateString STRING, notebookAsString STRING, "
+                                              f"outputVolumePath STRING, outputNotebookPath STRING, "
+                                              f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>, "
+                                              f"agentResponses MAP<STRING,STRING>)",
             }
-
             for table_name, table_spec in tables.items():
                 self.w.statement_execution.execute_statement(
                     statement=f"CREATE TABLE IF NOT EXISTS `{table_name}` {table_spec}"
