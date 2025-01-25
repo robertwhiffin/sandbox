@@ -24,7 +24,7 @@ class BatchInputCodeTab:
                 """
             )
             self.volume_path = gr.Textbox(
-                value='/'.join(["/Volumes",config.get("CATALOG"), config.get("SCHEMA"), config.get("VOLUME")]),
+                value=config.get("VOLUME_NAME_INPUT_PATH"),
                 visible=False
             )
 
