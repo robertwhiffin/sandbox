@@ -26,6 +26,8 @@ from databricks.sdk.service.vectorsearch import (
     VectorIndexType,
 )
 
+from jobs_infra import JobsInfra
+
 
 # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
 def _handle_errors(func):
@@ -409,6 +411,13 @@ class SetUpMigrationAssistant:
             )
             logger.warning(e)
 
+    @_handle_errors
+    def setup_job(self):
+        job_infra = JobsInfra(self.config, self.w)
+        #upload job files
+
+        # create job and get job id
+        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job()
 
     def setup_migration_assistant(self):
         logging.info("Setting up infrastructure")

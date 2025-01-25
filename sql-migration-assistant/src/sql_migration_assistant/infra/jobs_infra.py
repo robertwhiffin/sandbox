@@ -43,10 +43,6 @@ class JobsInfra:
                 new_cluster=compute.ClusterSpec(
                     spark_version=self.spark_version,
                     data_security_mode=DataSecurityMode.SINGLE_USER,
-                    # spark_conf = {
-                    #     "spark.databricks.cluster.profile": "singleNode",
-                    #     "spark.master": "local[*]",
-                    # },
                     num_workers=1,
                     node_type_id=self.node_types[self.cloud],
                 ),
@@ -54,7 +50,7 @@ class JobsInfra:
         ]
 
         self.job_name = "sql_migration_code_transformation"
-        self.notebook_root_path = f"/Workspace/Users/{self.w.current_user.me().user_name}/.sql-migration-assistant/jobs/"
+        self.notebook_root_path = self.config["DEPLOYMENT_PATH"]+"/jobs/"
         self.job_parameters = [
             JobParameterDefinition("agent_configs", ""),
             JobParameterDefinition("app_configs", ""),
@@ -100,7 +96,8 @@ class JobsInfra:
             job_clusters=self.job_clusters,
             parameters=self.job_parameters,
         )
-        self.config["TRANSFORMATION_JOB_ID"] = job_id.job_id
+        return job_id
+
 
     def _get_cloud(self):
         host = self.w.config.host
