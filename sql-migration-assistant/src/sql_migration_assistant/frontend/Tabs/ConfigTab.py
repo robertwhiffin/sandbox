@@ -35,7 +35,7 @@ class ConfigTab:
             #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
             # )
 
-            self.volume_dropdown = gr.Dropdown(
+            self.volume_folder_dropdown = gr.Dropdown(
                 choices=[
                     volume.name
                     for volume in self.w.volumes.list(
@@ -50,51 +50,26 @@ class ConfigTab:
                 self.tab, label="Default Foundation Endpoint"
             )
 
-            # configing the VS index on the fly requires more thought, as the VS
-            # infra needs an table, embedding model, and VS endpoint to be set up - can't change one with
-            # out changing all
-
-            # self.intent_tabel_name_box = gr.Textbox(
-            #     label="Intent Table",
-            #     interactive=True,
-            #     value=config.get("CODE_INTENT_TABLE_NAME"),
-            # )
-
             self.prompt_tabel_name_box = gr.Textbox(
                 label="Instructions Table",
                 interactive=True,
                 value=config.get("INSTRUCTIONS_TABLE_NAME"),
             )
 
-            # this is not configurable as the VS index can only have a single backing index
-            # self.vector_search_index_box = gr.Textbox(
-            #     label="Vector Search Index",
-            #     interactive=True,
-            #     value=config.get("VS_INDEX_NAME"),
-            # )
-
             self.save_config = gr.Button(
                 f"Save {title}",
             )
 
             def set_configs(
-                    #a,
-                    #b,
                     c,
                     d,
-                    #x,
                     y,
-                    #z
             ):
                 config.set_configs(
                     {
-                       # "EMBEDDING_MODEL_ENDPOINT": a,
-                       # "VECTOR_SEARCH_ENDPOINT_NAME": b,
                         "VOLUME": c,
                         "DEFAULT_LLM": d,
-                       # "CODE_INTENT_TABLE_NAME": x,
                         "INSTRUCTIONS_TABLE_NAME": y,
-                       # "VS_INDEX_NAME": z,
                     }
                 )
                 gr.Info("Configurations saved")
@@ -105,33 +80,14 @@ class ConfigTab:
             self.save_config.click(
                 set_configs,
                 inputs=[
-                   # self.embedding_model_endpoint_dropdown,
-                   # self.vector_search_dropdown,
-                    self.volume_dropdown,
+                    self.volume_folder_dropdown,
                     self.default_llm_dropdown,
-                    #self.intent_tabel_name_box,
                     self.prompt_tabel_name_box,
-                    #self.vector_search_index_box,
                 ],
                 outputs=initialized,
             )
             self.tab.select(
                 lambda: [
-                    #gr.update(
-                    #     value=config.get("EMBEDDING_MODEL_ENDPOINT"),
-                    #     choices=[
-                    #         e.name
-                    #         for e in self.w.serving_endpoints.list()
-                    #         if e.task and "embedding" in e.task
-                    #     ],
-                    # ),
-                    # gr.update(
-                    #     value=config.get("VECTOR_SEARCH_ENDPOINT_NAME"),
-                    #     choices=[
-                    #         f"{endpoint.name} ({endpoint.num_indexes} indices)"
-                    #         for endpoint in self.w.vector_search_endpoints.list_endpoints()
-                    #     ],
-                    # ),
                     gr.update(
                         value=config.get("VOLUME"),
                         choices=[
@@ -141,16 +97,10 @@ class ConfigTab:
                             )
                         ],
                     ),
-                    #gr.update(value=config.get("CODE_INTENT_TABLE_NAME")),
                     gr.update(value=config.get("INSTRUCTIONS_TABLE_NAME")),
-                   # gr.update(value=config.get("VS_INDEX_NAME")),
                 ],
                 outputs=[
-                   # self.embedding_model_endpoint_dropdown,
-                   # self.vector_search_dropdown,
-                    self.volume_dropdown,
-                    #self.intent_tabel_name_box,
+                    self.volume_folder_dropdown,
                     self.prompt_tabel_name_box,
-                    #self.vector_search_index_box,
                 ],
             )

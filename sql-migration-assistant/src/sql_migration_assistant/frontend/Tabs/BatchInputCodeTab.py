@@ -18,10 +18,16 @@ class BatchInputCodeTab:
                Legion can batch process a Volume of files to generate Databricks notebooks. The files to translate must be 
                added to the *Input Code* folder in the UC Volume [here]({config.w.config.host}/explore/data/volumes/{config.catalog}/{config.get('SCHEMA')}/{config.get('VOLUME')}). 
 
+               Note - every file present will be processed in batch mode.
+               
                Here you can select a file to fine tune your agent prompts against. 
                 """
             )
-            self.volume_path = gr.Textbox(value=None, visible=False)
+            self.volume_path = gr.Textbox(
+                value='/'.join(["/Volumes",config.get("CATALOG"), config.get("SCHEMA"), config.get("VOLUME")]),
+                visible=False
+            )
+
 
             self.load_files = gr.Button("Load Files from Volume")
             self.select_code_file = gr.Radio(label="Select Code File")
