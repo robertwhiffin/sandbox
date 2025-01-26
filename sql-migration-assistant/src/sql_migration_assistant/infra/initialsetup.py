@@ -1,6 +1,8 @@
 import logging
 from typing import Callable
-import time
+import base64
+from pathlib import Path
+
 from databricks.labs.blueprint.tui import Prompts
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors import ResourceAlreadyExists, BadRequest
@@ -12,8 +14,7 @@ from databricks.sdk.service.sql import (
     WarehousePermissionLevel,
 )
 from databricks.sdk.service.catalog import VolumeType
-from databricks.sdk.service.workspace import ObjectType, WorkspaceObjectAccessControlRequest, WorkspaceObjectPermissionLevel
-
+from databricks.sdk.service.workspace import ObjectType, WorkspaceObjectAccessControlRequest, WorkspaceObjectPermissionLevel, ImportFormat, Language
 from sql_migration_assistant.utils import logger
 from sql_migration_assistant.utils.storage import get_db_connection, execute_query
 
@@ -26,7 +27,7 @@ from databricks.sdk.service.vectorsearch import (
     VectorIndexType,
 )
 
-from jobs_infra import JobsInfra
+from .jobs_infra import JobsInfra
 
 
 # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
@@ -191,7 +192,7 @@ class SetUpMigrationAssistant:
         def _create_tables():
             #TODO move this table name / table schema somewhere else?
             tables = {
-                "code_intent": f"(id BIGINT, code STRING, intent STRING, notebook_url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
+                "sql_migration_assistant_code_intent": f"(id BIGINT, code STRING, intent STRING, notebook_url STRING) TBLPROPERTIES (delta.enableChangeDataFeed = true)",
                 "bronze_raw_code": f"(path STRING, modificationTime TIMESTAMP, length INT, content STRING,loadDatetime TIMESTAMP)",
                 "bronze_prompt_config": f"(promptID INT, agentConfigs MAP <STRING, MAP <STRING, STRING>>, loadDatetime TIMESTAMP)",
                 "bronze_holding_table": f"(id LONG, path STRING, modificationTime TIMESTAMP, length INT, content STRING, "
@@ -414,7 +415,20 @@ class SetUpMigrationAssistant:
     @_handle_errors
     def setup_job(self):
         job_infra = JobsInfra(self.config, self.w)
-        #upload job files
+        jobs_path = self.config["DEPLOYMENT_PATH"]+"/jobs/"
+        self.w.workspace.mkdirs(jobs_path)
+        file_root=Path(__file__).parent.parent.parent.parent.resolve()/"jobs"
+        files = ['bronze_to_silver.py', 'call_agents.py', 'silver_to_gold.py']
+        for f in files:
+            full_path = file_root/f
+            with open(full_path, "r") as _:
+                content=_.read()
+            self.w.workspace.import_(
+                content=base64.b64encode(content.encode("utf-8")).decode("utf-8"),
+                path=jobs_path+f,
+                format=ImportFormat.SOURCE,
+                language=Language.PYTHON
+            )
 
         # create job and get job id
         self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job()
@@ -449,6 +463,11 @@ class SetUpMigrationAssistant:
         logging.info("Setting up Deployment Directory")
         print("\nSetting up Deployment Directory")
         self.setup_deployment_dir()
+
+        ############################################################
+        logging.info("Setting up Job")
+        print("\nSetting up Job")
+        self.setup_job()
 
         ############################################################
         logging.info("Infrastructure setup complete")

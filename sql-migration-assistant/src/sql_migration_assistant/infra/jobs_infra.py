@@ -96,7 +96,7 @@ class JobsInfra:
             job_clusters=self.job_clusters,
             parameters=self.job_parameters,
         )
-        return job_id
+        return job_id.job_id
 
 
     def _get_cloud(self):
