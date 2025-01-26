@@ -193,9 +193,11 @@ def execute_workflow(
     intent_prompt,
     intent_temperature,
     intent_max_tokens,
+    intent_foundation_model,
     translation_prompt,
     translation_temperature,
     translation_max_tokens,
+    translation_foundation_model,
 ):
     gr.Info("Beginning code transformation workflow")
     agent_config_payload = [
@@ -203,7 +205,7 @@ def execute_workflow(
             {
                 "translation_agent": {
                     "system_prompt": translation_prompt,
-                    "endpoint": config.get("TRANSLATION_MODEL_NAME"),
+                    "endpoint": translation_foundation_model,
                     "max_tokens": translation_max_tokens,
                     "temperature": translation_temperature,
                 }
@@ -213,7 +215,7 @@ def execute_workflow(
             {
                 "explanation_agent": {
                     "system_prompt": intent_prompt,
-                    "endpoint": config.get("INTENT_MODEL_NAME"),
+                    "endpoint": intent_foundation_model,
                     "max_tokens": intent_max_tokens,
                     "temperature": intent_temperature,
                 }
@@ -254,7 +256,7 @@ def execute_workflow(
         f"Job run initiated. Click [here]({job_url}) to view the job status. "
         f"You just executed the run with run_id: {run_id}\n"
         f"Output notebooks will be written to the Workspace for immediate use at *{WORKSPACE_LOCATION}/outputNotebooks/batchTranslated*"
-        f", and also in the *Output Code* folder in the UC Volume [here]({w.config.host}/explore/data/volumes/{w.catalogs}/{config.get('SCHEMA')}/{config.get('VOLUME')})"
+        f", and also in the *Output Code* folder in the UC Volume [here]({w.config.host}/explore/data/volumes/{config.get('CATALOG')}/{config.get('SCHEMA')}/{config.get('VOLUME')})"
     )
     return textbox_message
 

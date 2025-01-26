@@ -86,9 +86,11 @@ class GradioFrontend:
                     self.code_explanation_tab.system_prompt,
                     self.code_explanation_tab.temperature,
                     self.code_explanation_tab.max_tokens,
+                    self.code_explanation_tab.foundation_model_dropdown,
                     self.translation_tab.system_prompt,
                     self.translation_tab.temperature,
                     self.translation_tab.max_tokens,
+                    self.translation_tab.foundation_model_dropdown
                 ],
                 outputs=self.batch_output_tab.run_status,
             )
