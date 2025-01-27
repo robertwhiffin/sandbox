@@ -21,13 +21,12 @@ from sql_migration_assistant.frontend.callbacks import (
     execute_workflow,
     write_adhoc_to_workspace,
 )
+from sql_migration_assistant.frontend.styles import styles
 
 try:
     config = get_config()
 except Exception as e:
     print(f"Error loading config: {e}")
-
-current_folder = Path(__file__).parent.resolve()
 
 
 class GradioFrontend:
@@ -38,7 +37,7 @@ class GradioFrontend:
 
     def __init__(self):
         with gr.Blocks(
-            theme=gr.themes.Soft(), css=str(Path(current_folder, "styles.css"))
+            theme=gr.themes.Soft(), css=styles
         ) as self.app:
             self.intro_markdown = gr.Markdown(self.intro)
             self.initialized = gr.Radio(

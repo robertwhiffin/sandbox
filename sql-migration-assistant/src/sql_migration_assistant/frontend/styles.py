@@ -1,3 +1,5 @@
+
+styles = """
 .custom-markdown {
     background-color: white;
     padding: 10px;
@@ -12,3 +14,4 @@
     padding: 15px; /* Inner padding */
     margin: 10px; /* Outer margin */
 }
+"""
