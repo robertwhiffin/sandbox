@@ -98,9 +98,11 @@ class ConfigTab:
                         ],
                     ),
                     gr.update(value=config.get("INSTRUCTIONS_TABLE_NAME")),
+                    gr.update(value=config.get("DEFAULT_LLM")),
                 ],
                 outputs=[
                     self.volume_folder_dropdown,
                     self.prompt_tabel_name_box,
+                    self.default_llm_dropdown
                 ],
             )
