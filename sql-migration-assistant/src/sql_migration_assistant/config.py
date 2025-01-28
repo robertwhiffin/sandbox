@@ -128,7 +128,7 @@ class Config:
         return (
             len(
                 {
-                    "VOLUME",
+                    "DEFAULT_LLM",
                 }.difference(self.config.keys())
             )
             == 0
