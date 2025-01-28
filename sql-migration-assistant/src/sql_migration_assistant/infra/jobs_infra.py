@@ -1,3 +1,5 @@
+from importlib.metadata import pass_none
+
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute
 from databricks.sdk.service.compute import DataSecurityMode
@@ -8,6 +10,8 @@ from databricks.sdk.service.jobs import (
     ForEachTask,
     JobCluster,
     JobParameterDefinition,
+    JobAccessControlRequest,
+    JobPermissionLevel
 )
 
 """
@@ -89,9 +93,15 @@ class JobsInfra:
             ),
         ]
 
-    def create_transformation_job(self):
+    def create_transformation_job(self, service_principle_id:str):
         job_id = self.w.jobs.create(
             name=self.job_name,
+            access_control_list=[
+                JobAccessControlRequest(
+                    permission_level= JobPermissionLevel.CAN_MANAGE_RUN,
+                    service_principal_name=service_principle_id
+                )
+            ],
             tasks=self.job_tasks,
             job_clusters=self.job_clusters,
             parameters=self.job_parameters,

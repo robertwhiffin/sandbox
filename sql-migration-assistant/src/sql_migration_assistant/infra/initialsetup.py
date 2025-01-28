@@ -430,8 +430,10 @@ class SetUpMigrationAssistant:
                 language=Language.PYTHON
             )
 
-        # create job and get job id
-        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job()
+        # create job and get job id. Uses the self.app.service_principal_client_id to assign permissions
+        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
+
+
 
     def setup_migration_assistant(self):
         logging.info("Setting up infrastructure")
