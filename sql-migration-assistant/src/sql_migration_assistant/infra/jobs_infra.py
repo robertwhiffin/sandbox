@@ -63,7 +63,7 @@ class JobsInfra:
             Task(
                 task_key="ingest_to_holding",
                 notebook_task=NotebookTask(
-                    notebook_path=self.notebook_root_path + "bronze_to_silver"
+                    notebook_path=self.notebook_root_path + "bronze_to_silver.py"
                 ),
                 disable_auto_optimization=True,
             ),
@@ -74,7 +74,7 @@ class JobsInfra:
                     task=Task(
                         task_key="call_agent",
                         notebook_task=NotebookTask(
-                            notebook_path=self.notebook_root_path + "call_agents",
+                            notebook_path=self.notebook_root_path + "call_agents.py",
                             base_parameters={"record_id": "{{input}}"},
                         ),
                         job_cluster_key="sql_migration_job_cluster",
@@ -86,7 +86,7 @@ class JobsInfra:
             Task(
                 task_key="silver_to_gold",
                 notebook_task=NotebookTask(
-                    notebook_path=self.notebook_root_path + "silver_to_gold"
+                    notebook_path=self.notebook_root_path + "silver_to_gold.py"
                 ),
                 depends_on=[TaskDependency(task_key="call_agents")],
                 disable_auto_optimization=True,
