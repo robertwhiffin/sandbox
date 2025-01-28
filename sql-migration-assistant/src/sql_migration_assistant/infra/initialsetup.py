@@ -427,7 +427,8 @@ class SetUpMigrationAssistant:
                 content=base64.b64encode(content.encode("utf-8")).decode("utf-8"),
                 path=jobs_path+f,
                 format=ImportFormat.SOURCE,
-                language=Language.PYTHON
+                language=Language.PYTHON,
+                overwrite=True,
             )
 
         # create job and get job id. Uses the self.app.service_principal_client_id to assign permissions
