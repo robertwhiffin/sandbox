@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 
 import gradio as gr
+from fontTools.ttLib.tables.ttProgram import instructions
+from tomlkit import value
 
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.frontend.callbacks import (
@@ -170,6 +172,10 @@ class GenAITab:
                             label="AI Agent output", language="sql-sparkSQL", lines=4
                         )
 
+        self.tab.select(
+            lambda: [gr.update(choices=load_instructions(purpose.value)["name"].to_list()), gr.update(value=self.foundation_model_dropdown.value if self.foundation_model_dropdown.value else config.get("DEFAULT_LLM"))],
+            outputs=[self.instructions_dropdown, self.foundation_model_dropdown],
+        )
         # reset hidden chat history and prompt
         # do translation
         self.explain_button.click(
