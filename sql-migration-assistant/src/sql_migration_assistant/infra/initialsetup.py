@@ -436,7 +436,7 @@ class SetUpMigrationAssistant:
         self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
 
     @_handle_errors
-    def create_secret(self):
+    def setup_secret(self):
         secret_infra = SecretsInfra(self.w, self.prompts)
         scope_name, secret_key = secret_infra.create_secret_PAT()
         self.config["DATABRICKS_TOKEN_SECRET_SCOPE"] = scope_name
@@ -480,8 +480,16 @@ class SetUpMigrationAssistant:
         print("\nSetting up Job")
         self.setup_job()
 
+
+        ############################################################
+        logging.info("Setting up Secret")
+        print("\nSetting up Secret")
+        self.setup_secret()
+
         ############################################################
         logging.info("Infrastructure setup complete")
         print("\nInfrastructure setup complete")
+
+
 
         return self.config
