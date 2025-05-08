@@ -33,7 +33,7 @@ code_intent_table = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_conf
 
 secret_scope = app_configs["DATABRICKS_TOKEN_SECRET_SCOPE"]
 secret_key = app_configs["DATABRICKS_TOKEN_SECRET_KEY"]
-host = app_configs["DATABRICKS_HOST"]
+DATABRICKS_HOST = app_configs["DATABRICKS_HOST"]
 
 workspace_location = app_configs["WORKSPACE_LOCATION"]
 workspace_location = "/Workspace" + workspace_location
@@ -48,7 +48,7 @@ print(record_id)
 # COMMAND ----------
 
 # need this for when workspace client is created during a job
-key = dbutils.secrets.get(scope=secret_scope, key=secret_key)
+DATABRICKS_PAT = dbutils.secrets.get(scope=secret_scope, key=secret_key)
 
 ####################
 # udf to get the most similar code notebook path
@@ -65,7 +65,7 @@ schema = app_configs["SCHEMA"]
         StructField("similarity", DoubleType(), True)
     ])
 ))
-def get_similar_code(intent):
+def get_similar_code(intent, host, key):
     w = WorkspaceClient(host=host, token=key)
     results = w.vector_search_indexes.query_index(
         index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
@@ -83,7 +83,7 @@ def get_similar_code(intent):
 ####################
 # udf to make LLM calls
 @pandas_udf(MapType(StringType(), StringType()))
-def call_llm(input_code_series, agent_configs_series):
+def call_llm(input_code_series, agent_configs_series, host, key):
     def process_row(input_code, agent_configs):
         output = {}
         for agent in agent_configs.keys():
@@ -118,7 +118,7 @@ def call_llm(input_code_series, agent_configs_series):
 response = (
     spark.read.table(bronze_holding_table)
     .where(f.col("id") == f.lit(record_id))
-    .withColumn("llm_responses", call_llm(f.col("content"), f.col("agentConfigs")))
+    .withColumn("llm_responses", call_llm(f.col("content"), f.col("agentConfigs"), f.lit(DATABRICKS_HOST), f.lit(DATABRICKS_PAT)))
     .withColumn("agentName", f.map_keys(f.col("agentConfigs")).getItem(0))
     .withColumn("agentResponse", f.map_values(f.col("llm_responses")).getItem(0))
     .withColumn("processedDateString", f.lit(processedDatetime))
@@ -136,7 +136,7 @@ response = (
     .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
     .withColumn(
         "similarCodeNotebooks",
-        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"))).otherwise(
+        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"), f.lit(DATABRICKS_HOST), f.lit(DATABRICKS_PAT))).otherwise(
             f.lit(None))
     )
     .cache()

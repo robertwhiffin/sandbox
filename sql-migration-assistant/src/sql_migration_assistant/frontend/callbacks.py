@@ -53,10 +53,15 @@ def read_code_file(volume_path, file_name):
 
 def llm_wrapper(system_prompt, input_code, model_name, max_tokens, temperature):
     model_name = model_name if not model_name.startswith("PPT - ") else model_name[6:]
-    intent = llm.llm_invoke(
-        system_prompt, input_code, model_name, max_tokens, temperature
-    )
-    return intent
+    try:
+        intent = llm.llm_invoke(
+            system_prompt, input_code, model_name, max_tokens, temperature
+        )
+        return intent
+    except Exception as e:
+        raise gr.Error(
+            f"Error invoking LLM: {e}."
+        )
 
 
 def save_instruction(
@@ -205,7 +210,7 @@ def execute_workflow(
             {
                 "translation_agent": {
                     "system_prompt": translation_prompt,
-                    "endpoint": translation_foundation_model,
+                    "endpoint": translation_foundation_model if "PPT - databricks" not in translation_foundation_model else translation_foundation_model.replace("PPT - ", ""),
                     "max_tokens": translation_max_tokens,
                     "temperature": translation_temperature,
                 }
@@ -215,7 +220,7 @@ def execute_workflow(
             {
                 "explanation_agent": {
                     "system_prompt": intent_prompt,
-                    "endpoint": intent_foundation_model,
+                    "endpoint": intent_foundation_model if "PPT - databricks" not in intent_foundation_model else intent_foundation_model.replace("PPT - ", ""),
                     "max_tokens": intent_max_tokens,
                     "temperature": intent_temperature,
                 }
