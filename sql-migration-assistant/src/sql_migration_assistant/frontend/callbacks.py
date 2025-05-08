@@ -249,7 +249,7 @@ def execute_workflow(
                 "app_configs": app_configs,
             },
         )
-    except databricks.sdk.errors.platform.InvalidParameterValue as e:
+    except Exception as e:
         raise gr.Error(
             f"Error executing job: {e}. Please check the job configuration and try again."
         )
