@@ -17,10 +17,7 @@ from sql_migration_assistant.utils.storage import (
 
 class Config:
     config: dict = {
-        "CONFIG_TABLE_NAME": "sql_migration_assistant_configs",
-
-        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant",
-        "INSTRUCTIONS_TABLE_NAME": "sql_migration_assistant_instructions",
+        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant"
     }
 
     def __init__(self, profile=None):
@@ -53,12 +50,6 @@ class Config:
 
     def set_configs(self, configs: dict):
         logger.info(f"Setting Configs {configs}")
-        insert(
-            self.config_table,
-            [{"key": k, "value": v} for k, v in configs.items()],
-            keys=["key"],
-            upsert=True,
-        )
         self.config = {**self.config, **configs}
 
     def get(self, key, default=None):
