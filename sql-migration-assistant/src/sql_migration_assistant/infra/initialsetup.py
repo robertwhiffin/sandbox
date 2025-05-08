@@ -433,8 +433,7 @@ class SetUpMigrationAssistant:
             )
 
         # create job and get job id. Uses the self.app.service_principal_client_id to assign permissions
-        #self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
-        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_name)
+        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
 
     @_handle_errors
     def create_secret(self):
