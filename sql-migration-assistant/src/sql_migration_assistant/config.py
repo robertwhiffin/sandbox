@@ -34,7 +34,6 @@ class Config:
         self.config_table = self.config.get("CONFIG_TABLE_NAME")
         self.validate_first_setup()
         self.con = get_db_connection(self.profile, self.warehouse.id)
-        self.from_sql()
 
     def get_workspace_path(self):
         return self.config.get(
@@ -42,21 +41,7 @@ class Config:
             f"/Workspace/Users/{self.w.config.username}/sql_migration_assistant_files",
         )
 
-    def from_sql(self):
-        if not table_exists(self.config_table, config=self):
-            logger.warning(
-                f"No Config table found at {self.config_table}. Creating new one"
-            )
-            create_table(self.config_table, "key STRING, value STRING", config=self)
-            insert(
-                self.config_table,
-                [{"key": k, "value": v} for k, v in self.config.items()],
-                config=self,
-            )
-        else:
-            config = read(self.config_table, config=self)
-            for _, row in config.iterrows():
-                self.config[row["key"]] = row["value"]
+
 
     def from_environ(self):
         for key, value in os.environ.items():
