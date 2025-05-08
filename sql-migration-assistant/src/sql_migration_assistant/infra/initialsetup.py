@@ -28,6 +28,7 @@ from databricks.sdk.service.vectorsearch import (
 )
 
 from .jobs_infra import JobsInfra
+from .secrets_infra import SecretsInfra
 
 
 # this is a decorator to handle errors and do a retry where user is asked to choose an existing resource
@@ -432,7 +433,15 @@ class SetUpMigrationAssistant:
             )
 
         # create job and get job id. Uses the self.app.service_principal_client_id to assign permissions
-        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
+        #self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_client_id)
+        self.config["TRANSFORMATION_JOB_ID"] = job_infra.create_transformation_job(self.app.service_principal_name)
+
+    @_handle_errors
+    def create_secret(self):
+        secret_infra = SecretsInfra(self.w, self.prompts)
+        scope_name, secret_key = secret_infra.create_secret_PAT()
+        self.config["DATABRICKS_TOKEN_SECRET_SCOPE"] = scope_name
+        self.config["DATABRICKS_TOKEN_SECRET_KEY"] = secret_key
 
 
 

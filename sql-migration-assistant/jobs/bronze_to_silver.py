@@ -30,7 +30,7 @@ bronze_raw_code = f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_raw_
 
 
 bronze_prompt_config = (
-    f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.{app_configs["INSTRUCTIONS_TABLE_NAME"]}'
+    f'{app_configs["CATALOG"]}.{app_configs["SCHEMA"]}.bronze_prompt_config'
 )
 
 
