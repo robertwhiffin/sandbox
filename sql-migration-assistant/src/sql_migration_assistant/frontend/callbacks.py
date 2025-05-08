@@ -240,15 +240,19 @@ def execute_workflow(
 
     app_configs = json.dumps(app_config_payload)
     agent_configs = json.dumps(agent_config_payload)
-
-    TRANSFORMATION_JOB_ID = config.get("TRANSFORMATION_JOB_ID")
-    response = w.jobs.run_now(
-        job_id=int(TRANSFORMATION_JOB_ID),
-        job_parameters={
-            "agent_configs": agent_configs,
-            "app_configs": app_configs,
-        },
-    )
+    try:
+        TRANSFORMATION_JOB_ID = config.get("TRANSFORMATION_JOB_ID")
+        response = w.jobs.run_now(
+            job_id=int(TRANSFORMATION_JOB_ID),
+            job_parameters={
+                "agent_configs": agent_configs,
+                "app_configs": app_configs,
+            },
+        )
+    except databricks.sdk.errors.platform.InvalidParameterValue as e:
+        raise gr.Error(
+            f"Error executing job: {e}. Please check the job configuration and try again."
+        )
     run_id = response.run_id
 
     job_url = f"{w.config.host}/jobs/{TRANSFORMATION_JOB_ID}"
