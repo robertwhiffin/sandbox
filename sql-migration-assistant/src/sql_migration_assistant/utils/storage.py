@@ -115,13 +115,6 @@ def create_table(table: str, schema: str, config=None):
     execute_query(f"Create table {config.catalog_schema}.{table} ({schema});", config=config)
 
 
-@ensure_config
-def create_if_not_exists(table: str, schema: str, config=None):
-    if not table_exists(table, config=config):
-        logger.info(f"Table {table} does not exist")
-        create_table(table, schema, config=config)
-
-
 def get_db_connection(profile: str, warehouse_id: str):
     cfg = Config(profile=profile)
 

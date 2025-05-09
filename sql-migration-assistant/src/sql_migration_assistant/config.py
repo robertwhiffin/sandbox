@@ -17,7 +17,8 @@ from sql_migration_assistant.utils.storage import (
 
 class Config:
     config: dict = {
-        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant"
+        "WORKSPACE_OUTPUT_PATH_ROOT": "/Workspace/Shared/sql-migration-assistant",
+        "INSTRUCTIONS_TABLE_NAME": "agent_instructions",
     }
 
     def __init__(self, profile=None):

@@ -41,17 +41,6 @@ class JobsInfra:
             "aws": "m5d.xlarge",
         }
         self.cloud = self._get_cloud()
-        # self.job_clusters = [
-        #     JobCluster(
-        #         job_cluster_key="sql_migration_job_cluster",
-        #         new_cluster=compute.ClusterSpec(
-        #             spark_version=self.spark_version,
-        #             data_security_mode=DataSecurityMode.SINGLE_USER,
-        #             num_workers=1,
-        #             node_type_id=self.node_types[self.cloud],
-        #         ),
-        #     )
-        # ]
 
         self.job_name = "sql_migration_code_transformation"
         self.notebook_root_path = self.config["DEPLOYMENT_PATH"]+"/jobs/"
@@ -77,10 +66,10 @@ class JobsInfra:
                             notebook_path=self.notebook_root_path + "call_agents.py",
                             base_parameters={"record_id": "{{input}}"},
                          ),
-                        # job_cluster_key="sql_migration_job_cluster",
                     ),
                     concurrency=8,
                 ),
+                disable_auto_optimization=True,
                 depends_on=[TaskDependency(task_key="ingest_to_holding")],
             ),
             Task(

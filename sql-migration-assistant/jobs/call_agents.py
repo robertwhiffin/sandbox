@@ -1,4 +1,12 @@
 # Databricks notebook source
+# MAGIC %pip install databricks-sdk --upgrade
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 import json
@@ -39,7 +47,8 @@ workspace_location = app_configs["WORKSPACE_LOCATION"]
 workspace_location = "/Workspace" + workspace_location
 
 # get the processedDatetime value set in the first task
-processedDatetime = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="processedDatetime")
+processedDatetime = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="processedDatetime",
+                                                debugValue="2023-0-4")
 
 # COMMAND ----------
 
@@ -56,49 +65,48 @@ VS_INDEX_NAME = app_configs["VS_INDEX_NAME"]
 catalog = app_configs["CATALOG"]
 schema = app_configs["SCHEMA"]
 
+w = WorkspaceClient(host=DATABRICKS_HOST, token=DATABRICKS_PAT)
 
-# Define the schema for the array of structs
-@udf(ArrayType(
-    StructType([
-        StructField("notebook_url", StringType(), True),
-        StructField("intent", StringType(), True),
-        StructField("similarity", DoubleType(), True)
-    ])
-))
-def get_similar_code(intent, host, key):
-    w = WorkspaceClient(host=host, token=key)
-    results = w.vector_search_indexes.query_index(
-        index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
-        columns=["notebook_url", "intent"],
-        query_text=intent,
-        num_results=5,
-    )
-    data_array = results.result.data_array
-    if data_array:
-        return [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item in data_array]
+
+def get_similar_code(row):
+    agent = row['agentName']
+    if agent == "explanation_agent":
+        intent = row["agentResponse"]
+        results = w.vector_search_indexes.query_index(
+            index_name=f"{catalog}.{schema}.{VS_INDEX_NAME}",
+            columns=["notebook_url", "intent"],
+            query_text=intent,
+            num_results=5,
+        )
+        data_array = results.result.data_array
+        if data_array:
+            row['similarCodeNotebooks'] = [{"notebook_url": item[0], "intent": item[1], "similarity": item[2]} for item
+                                           in data_array]
+            return row
+        else:
+            row['similarCodeNotebooks'] = None
+            return row
     else:
-        return None
+        row['similarCodeNotebooks'] = None
+        return row
 
 
-####################
-# udf to make LLM calls
-@pandas_udf(MapType(StringType(), StringType()))
-def call_llm(input_code_series, agent_configs_series, host, key):
-    def process_row(input_code, agent_configs):
-        output = {}
-        for agent in agent_configs.keys():
-            agent_app_configs = agent_configs[agent]
-            system_prompt = agent_app_configs["system_prompt"]
-            endpoint = agent_app_configs["endpoint"]
-            max_tokens = agent_app_configs["max_tokens"]
-            temperature = agent_app_configs["temperature"]
-            w = WorkspaceClient(host=host, token=key)
-            messages = [
-                ChatMessage(role=ChatMessageRole.SYSTEM, content=system_prompt),
-                ChatMessage(role=ChatMessageRole.USER, content=input_code),
-            ]
-            max_tokens = int(max_tokens)
-            temperature = float(temperature)
+def process_row(row):
+    input_code, agent_configs = row["content"], row["agentConfigs"]
+    output = {}
+    for agent in agent_configs.keys():
+        agent_app_configs = agent_configs[agent]
+        system_prompt = agent_app_configs["system_prompt"]
+        endpoint = agent_app_configs["endpoint"]
+        max_tokens = agent_app_configs["max_tokens"]
+        temperature = agent_app_configs["temperature"]
+        messages = [
+            ChatMessage(role=ChatMessageRole.SYSTEM, content=system_prompt),
+            ChatMessage(role=ChatMessageRole.USER, content=input_code),
+        ]
+        max_tokens = int(max_tokens)
+        temperature = float(temperature)
+        try:
             response = w.serving_endpoints.query(
                 name=endpoint,
                 max_tokens=max_tokens,
@@ -106,40 +114,71 @@ def call_llm(input_code_series, agent_configs_series, host, key):
                 temperature=temperature,
             )
             message = response.choices[0].message.content
-            output[agent] = message
-        return output
+            row['agentName'] = agent
+            row['agentResponse'] = message
+        except TimeoutError:
+            row['agentName'] = agent
+            row['agentResponse'] = "Request timeout. Reduce size of input code."
 
-    return input_code_series.combine(agent_configs_series, process_row)
+    return row
 
 
 # COMMAND ----------
 
-# DBTITLE 1,Call the AI Agents
-response = (
+local_data = (
     spark.read.table(bronze_holding_table)
     .where(f.col("id") == f.lit(record_id))
-    .withColumn("llm_responses", call_llm(f.col("content"), f.col("agentConfigs"), f.lit(DATABRICKS_HOST), f.lit(DATABRICKS_PAT)))
-    .withColumn("agentName", f.map_keys(f.col("agentConfigs")).getItem(0))
-    .withColumn("agentResponse", f.map_values(f.col("llm_responses")).getItem(0))
-    .withColumn("processedDateString", f.lit(processedDatetime))
-    .withColumn(
-        "outputNotebookPath",
-        f.concat_ws(
-            "/",
-            f.lit(workspace_location),
-            f.lit("outputNotebooks"),
-            f.lit("batchTranslated"),
-            f.col("processedDateString"),
-            f.col("path"),
-        ),
-    )
-    .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath")
-    .withColumn(
-        "similarCodeNotebooks",
-        f.when(f.col("agentName") == "explanation_agent", get_similar_code(f.col("agentResponse"), f.lit(DATABRICKS_HOST), f.lit(DATABRICKS_PAT))).otherwise(
-            f.lit(None))
-    )
-    .cache()
+    .collect()[0].asDict()
 )
 
-(response.write.mode("append").saveAsTable(silver_llm_responses))
+
+# COMMAND ----------
+
+def build_output(local_data):
+    output = process_row(local_data)
+    output = get_similar_code(output)
+    output['processedDateString'] = processedDatetime
+    output["outputNotebookPath"] = '/'.join(
+        [workspace_location, "outputNotebooks", "batchTranslated", processedDatetime, output['path']])
+    return output
+
+
+processed = build_output(local_data)
+
+# COMMAND ----------
+
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, ArrayType, DoubleType
+
+schema = StructType([
+    StructField("path", StringType(), True),
+    StructField("promptID", IntegerType(), True),
+    StructField("processedDateString", StringType(), True),
+    StructField("content", StringType(), True),
+    StructField("agentName", StringType(), True),
+    StructField("agentResponse", StringType(), True),
+    StructField("outputNotebookPath", StringType(), True),
+    StructField("similarCodeNotebooks", ArrayType(
+        StructType([
+            StructField("notebook_url", StringType(), True),
+            StructField("intent", StringType(), True),
+            StructField("similarity", DoubleType(), True)
+        ])
+    ), True)
+])
+
+# COMMAND ----------
+
+# convert the dictionary processed to a spark dataframe
+processed_df = (
+    spark.createDataFrame([processed], schema=schema)
+    .select("path", "promptID", "processedDateString", "content", "agentName", "agentResponse", "outputNotebookPath",
+            'similarCodeNotebooks')
+)
+display(processed_df)
+
+# COMMAND ----------
+
+(processed_df.write.mode("append").saveAsTable(silver_llm_responses))
+
+# COMMAND ----------
+

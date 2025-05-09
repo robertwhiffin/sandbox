@@ -72,10 +72,6 @@ def save_instruction(
     system_prompt: str,
     instruction_type: str,
 ):
-    create_if_not_exists(
-        config.get("INSTRUCTIONS_TABLE_NAME"),
-        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
-    )
     insert(
         config.get("INSTRUCTIONS_TABLE_NAME"),
         [
@@ -96,10 +92,6 @@ def save_instruction(
 
 
 def load_instructions(instruction_type: str, name: str = None) -> pd.DataFrame:
-    create_if_not_exists(
-        config.get("INSTRUCTIONS_TABLE_NAME"),
-        "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
-    )
     where = f"instruction_type = '{instruction_type}'" + (
         "" if name is None else f" AND name = '{name}'"
     )

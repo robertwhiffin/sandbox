@@ -207,6 +207,7 @@ class SetUpMigrationAssistant:
                                               f"outputVolumePath STRING, outputNotebookPath STRING, "
                                               f"similarCodeNotebooks ARRAY<STRUCT<notebook_url: STRING, intent:STRING, similarity:DOUBLE>>, "
                                               f"agentResponses MAP<STRING,STRING>)",
+                "agent_instructions": "name STRING, description STRING, instruction_type STRING, endpoint STRING, temperature FLOAT, max_tokens INTEGER, system_prompt STRING",
             }
             for table_name, table_spec in tables.items():
                 self.w.statement_execution.execute_statement(
