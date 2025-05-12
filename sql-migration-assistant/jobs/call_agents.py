@@ -44,7 +44,6 @@ secret_key = app_configs["DATABRICKS_TOKEN_SECRET_KEY"]
 DATABRICKS_HOST = app_configs["DATABRICKS_HOST"]
 
 workspace_location = app_configs["WORKSPACE_LOCATION"]
-workspace_location = "/Workspace" + workspace_location
 
 # get the processedDatetime value set in the first task
 processedDatetime = dbutils.jobs.taskValues.get(taskKey="ingest_to_holding", key="processedDatetime",

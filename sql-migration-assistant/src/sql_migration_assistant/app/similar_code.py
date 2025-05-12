@@ -37,14 +37,17 @@ class SimilarCode:
 
     def get_similar_code(self, intent):
         gr.Info("Retrieving similar code...")
-        results = self.w.vector_search_indexes.query_index(
-            index_name=f"{self.vs_index_FQN}",
-            columns=["code", "intent", "url"],
-            query_text=intent,
-            num_results=5,
-        )
-        docs = results.result.data_array
-        return docs
+        try:
+            results = self.w.vector_search_indexes.query_index(
+                index_name=f"{self.vs_index_FQN}",
+                columns=["code", "intent", "notebook_url"],
+                query_text=intent,
+                num_results=5,
+            )
+            docs = results.result.data_array
+            return docs
+        except Exception as e:
+            raise gr.Error(f"Failed to retrieve similar code: {e}")
 
     def sync_index(self):
         self.w.vector_search_indexes.sync_index(index_name=self.vs_index_FQN)

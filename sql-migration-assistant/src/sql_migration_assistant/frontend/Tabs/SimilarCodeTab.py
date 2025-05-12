@@ -75,20 +75,26 @@ class SimilarCodeTab:
                 - get the similar code from the vector search index
                 - populate the results with the first value of the return boxes
                 """
-                retrieved_similar_code = similar_code_helper.get_similar_code(input)
-                similar_code = retrieved_similar_code[0][0]
-                similar_intent = retrieved_similar_code[0][1]
-                similar_notebook_url = retrieved_similar_code[0][2]
-                similar_notebook_url_markdown = (
-                    f"## [Link to similar code notebook]({similar_notebook_url})"
-                )
-                return [
-                    retrieved_similar_code,
-                    similar_code,
-                    similar_intent,
-                    similar_notebook_url,
-                    similar_notebook_url_markdown,
-                ]
+                try:
+                    retrieved_similar_code = similar_code_helper.get_similar_code(input)
+                    similar_code = retrieved_similar_code[0][0]
+                    similar_intent = retrieved_similar_code[0][1]
+                    similar_notebook_url = retrieved_similar_code[0][2]
+                    similar_notebook_url_markdown = (
+                        f"## [Link to similar code notebook]({similar_notebook_url})"
+                    )
+                    return [
+                        retrieved_similar_code,
+                        similar_code,
+                        similar_intent,
+                        similar_notebook_url,
+                        similar_notebook_url_markdown,
+                    ]
+                except Exception as e:
+                    gr.Info(
+                        f"Error retrieving similar code: {e}."
+                    )
+                    return ['']*5
 
             # When top button is clicked, get code and set everything to visible.
             self.find_similar_code.click(

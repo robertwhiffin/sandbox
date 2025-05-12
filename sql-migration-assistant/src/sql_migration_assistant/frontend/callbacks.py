@@ -12,7 +12,6 @@ from sql_migration_assistant.app.llm import LLMCalls
 from sql_migration_assistant.app.similar_code import SimilarCode
 from sql_migration_assistant.config import get_config
 from sql_migration_assistant.utils.storage import (
-    create_if_not_exists,
     insert,
     read,
 )
@@ -28,7 +27,7 @@ similar_code_helper = SimilarCode(
     catalog_schema=config.catalog_schema,
     code_intent_table_name=config.get("CODE_INTENT_TABLE_NAME"),
     VS_index_name=config.get("VS_INDEX_NAME"),
-    VS_endpoint_name=config.get("VS_INDEX_NAME"),
+    VS_endpoint_name=config.get("VS_ENDPOINT_NAME"),
     warehouse_id=config.get('WAREHOUSE_ID')
 )
 
