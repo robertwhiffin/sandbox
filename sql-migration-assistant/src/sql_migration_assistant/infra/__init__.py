@@ -54,7 +54,7 @@ def deploy(profile, **kwargs):
     create_app_yml(project_dir_resolved, config)
     create_requirements_txt(project_dir_resolved)
 
-    w = get_workspace_client(kwargs.get("profile"))
+    w = get_workspace_client(profile)
 
     deployment_path = config.get("DEPLOYMENT_PATH")
 
