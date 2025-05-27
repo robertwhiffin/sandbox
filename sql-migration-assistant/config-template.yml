@@ -1,0 +1,5 @@
+CATALOG: <your-catalog>
+SCHEMA: <your-schema>
+WAREHOUSE_ID: <Warehouse-name>
+APP: <name-of-databricks-app>
+DEPLOYMENT_PATH: <workspace-path-for-source-code>

@@ -1,1 +1,0 @@
-Simple caching library for Go
