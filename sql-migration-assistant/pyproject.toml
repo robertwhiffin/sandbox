@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sql_migration_assistant"
-description = "A brief description of your project."
+description = "A framework for using Generative AI to translate code into Databricks Notebooks."
 readme = "README.md"
-dynamic = ["version"]
+version = "1.0.0"
 requires-python = ">=3.10"
 dependencies = [
     "databricks-sdk",

@@ -32,16 +32,27 @@ customise the application to their needs and entirely own the IP.
 Setting Legion up is a simple and automated process. Ensure you have the [Databricks CLI]
 (https://docs.databricks.com/en/dev-tools/cli/index.html) installed and configured with the correct workspace.
 
-Once the Databricks CLI has been installed and configured, install the sql-migration-assistant (make sure you run it
-in the directory sql-migration-assistant:
-```bash
-pip install -e .
-```
-Last run the following command to install the Databricks Labs 
-Sandbox and the SQL Migration Assistant.
+Once the Databricks CLI has been installed and configured, you need to make sure you're python environment has all the
+right dependencies installed. An example of how do this by running the following commands in your terminal:
 
 ```bash
-databricks labs install sandbox && databricks labs sandbox sql-migration-assistant
+# go to directory where it was cloned, e.g.
+cd Documents/sandbox/sql-migration-assistant
+# create a new virtualenv
+pyenv virtualenv 3.11 sql-migration-assistant
+pyenv activate sql-migration-assistant
+# install package
+pip install -e .
+```
+Next just call *deploy.py* to install the application. This will read your Databricks CLI config file and use that for 
+authentication and workspace selection.
+
+```bash
+# this file is located in the root directory of the project
+python deploy.py
+
+# use a specific workspace profile
+python deploy.py --profile <your-profile-name-from ~/.databrickscfg>
 ```
 This will guide you through the initial setup and deploy the app in your workspace. In detail this runs the following
 subcommands:
@@ -52,10 +63,10 @@ As a result this will create and populate the file *config.yml*
 ### 1. Update Configuration or deployment
 To update the initial configuration or rerun the deployment you can run both commands independently
 ```bash
-databricks labs sandbox sql-migration-assistant --command=init
+python deploy.py --command init
 ```
 ```bash
-databricks labs sandbox sql-migration-assistant --command=deploy
+python deploy.py --command deploy
 ```
 **Note:** Deploying a new code version only works if you are on a different git commit than the previous version.
 ## Contributing
